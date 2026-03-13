@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cinémathèque — The Cinema Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+/* ═══════════════════════════════════════════════════════
+   CHANGE: CSS custom properties now support light/dark mode
+   via [data-theme] attribute toggle.
+   New: --sk-base/--sk-shine for shimmer skeleton colours.
+═══════════════════════════════════════════════════════ */
+:root {
+  /* Dark theme (default) */
+  --bg-void:#070709; --bg-deep:#0d0d12; --bg-panel:#12121a;
+  --bg-card:#1a1a26; --bg-hover:#22223a;
+  --gold:#c9a84c; --gold-light:#e8c97a; --gold-dim:#7a6530;
+  --crimson:#a8243c; --crimson-bright:#e02e50; --teal:#1a8a8a;
+  --text-prime:#f0ede8; --text-secondary:#9a9498; --text-muted:#5a575c;
+  --border:rgba(201,168,76,.15); --border-hover:rgba(201,168,76,.4);
+  --glow-gold:0 0 30px rgba(201,168,76,.3);
+  /* CHANGE: Skeleton shimmer colours */
+  --sk-base:#1a1a26; --sk-shine:#2a2a42; --sk-wave:#1a1a26;
+  /* CHANGE: Card hover shadow */
+  --card-shadow:0 20px 50px rgba(0,0,0,.65),0 0 0 1px rgba(201,168,76,.4);
+  /* Transition speed tokens */
+  --t-fast:150ms; --t-med:300ms; --t-slow:500ms;
+  --ease-bounce:cubic-bezier(.34,1.56,.64,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}
+
+/* CHANGE: Light-mode overrides via data-theme="light" */
+[data-theme="light"] {
+  --bg-void:#f4f1ec; --bg-deep:#ede9e2; --bg-panel:#e4dfd6;
+  --bg-card:#ddd8ce; --bg-hover:#d0cabf;
+  --text-prime:#1a1814; --text-secondary:#5a5650; --text-muted:#8a8680;
+  --border:rgba(122,101,48,.2); --border-hover:rgba(122,101,48,.5);
+  --sk-base:#ddd8ce; --sk-shine:#e8e3d8; --sk-wave:#ddd8ce;
+  --card-shadow:0 12px 40px rgba(0,0,0,.15),0 0 0 1px rgba(122,101,48,.3);
+}
+
+* { margin:0; padding:0; box-sizing:border-box }
+html { scroll-behavior:smooth }
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg-void); color:var(--text-prime);
+  overflow-x:hidden;
+  /* CHANGE: Smooth theme transition */
+  transition:background var(--t-slow) ease, color var(--t-slow) ease;
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg-void)}
+::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:2px}
+.view{display:none} .view.active{display:block}
+
+/* ═══════════════════════════════════════════════════════
+   CHANGE: Dark-mode toggle button (top-right nav area)
+═══════════════════════════════════════════════════════ */
+#themeToggle {
+  width:38px; height:38px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text-secondary); cursor:pointer;
+  transition:all var(--t-med); font-size:15px; flex-shrink:0;
+}
+#watchlistBtn:hover { border-color:var(--gold); color:var(--gold); }
+
+/* Watchlist panel */
+.wl-item {
+  display:flex; gap:12px; padding:10px; border-radius:4px;
+  background:var(--bg-card); margin-bottom:8px; cursor:pointer;
+  transition:all var(--t-med); border:1px solid transparent;
+}
+.wl-item:hover { border-color:var(--gold-dim); transform:translateX(3px); }
+.wl-poster {
+  width:50px; height:75px; border-radius:3px; overflow:hidden;
+  flex-shrink:0; background:var(--bg-hover);
+}
+.wl-poster img { width:100%; height:100%; object-fit:cover; }
+.wl-info { flex:1; min-width:0; }
+.wl-title {
+  font-size:13px; font-weight:600; margin-bottom:4px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.wl-meta { font-size:11px; color:var(--text-muted); margin-bottom:6px; }
+.wl-rating {
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:11px; color:var(--gold);
+}
+.wl-remove {
+  background:none; border:1px solid var(--border); border-radius:3px;
+  padding:4px 8px; font-size:10px; color:var(--text-secondary);
+  cursor:pointer; transition:all var(--t-fast); margin-top:6px;
+}
+.wl-remove:hover { border-color:var(--crimson); color:var(--crimson); }
+.wl-empty {
+  text-align:center; padding:40px 20px; color:var(--text-muted);
+}
+.wl-empty i { font-size:36px; margin-bottom:12px; display:block; color:var(--gold-dim); }
+#loader-curtain {
+    position: fixed; 
+    inset: 0; 
+    background: var(--bg-void); 
+    z-index: 9999; /* Ensures it stays on top of everything */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* The Logo Animation */
+.curtain-logo {
+    font-family: 'Bebas Neue', sans-serif; /* Ensure you have this font linked */
+    font-size: 5rem; 
+    color: var(--gold);
+    letter-spacing: 10px; 
+    opacity: 0;
+    transform: scale(0.9);
+    animation: logoFadeIn 1s forwards;
+}
+
+.curtain-logo span { 
+    color: var(--crimson-bright); 
+}
+
+/* Sliding Up State */
+#loader-curtain.hidden {
+    transform: translateY(-100%);
+}
+
+@keyframes logoFadeIn {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* API BADGE */
+.api-badge {
+  position:fixed; bottom:80px; right:20px; z-index:999;
+  font-size:10px; padding:5px 12px; border-radius:20px;
+  font-weight:600; letter-spacing:1px; text-transform:uppercase;
+  transition:opacity .5s .5s; pointer-events:none; opacity:1;
+}
+.api-badge.live   { background:rgba(30,180,80,.15);  border:1px solid rgba(30,180,80,.4);  color:#1eb450 }
+.api-badge.fallback{background:rgba(201,168,76,.15); border:1px solid var(--gold-dim);     color:var(--gold) }
+.api-badge.loading{ background:rgba(100,100,200,.15);border:1px solid rgba(100,100,200,.4);color:#9090ff }
+.api-badge.hide   { opacity:0 }
+
+/* NAVBAR */
+nav {
+  position:fixed; top:0; width:100%; z-index:1000;
+  padding:0 40px; height:68px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  background:linear-gradient(to bottom,rgba(7,7,9,.98),transparent);
+  transition:all var(--t-slow); border-bottom:1px solid transparent;
+}
+nav.scrolled {
+  background:rgba(7,7,9,.97); backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+[data-theme="light"] nav.scrolled { background:rgba(244,241,236,.97); }
+.nav-logo {
+  font-family:'Bebas Neue',sans-serif; font-size:28px;
+  letter-spacing:3px; color:var(--gold);
+  text-shadow:var(--glow-gold); cursor:pointer; flex-shrink:0;
+}
+.nav-logo span { color:var(--crimson-bright) }
+.nav-links { display:flex; gap:28px }
+.nav-link {
+  font-size:12px; font-weight:500; letter-spacing:1.5px;
+  text-transform:uppercase; color:var(--text-secondary);
+  cursor:pointer; transition:color var(--t-med); position:relative; padding-bottom:4px;
+}
+.nav-link::after {
+  content:''; position:absolute; bottom:0; left:0;
+  width:0; height:1px; background:var(--gold);
+  transition:width var(--t-med) var(--ease-out);
+}
+.nav-link:hover,.nav-link.active { color:var(--gold) }
+.nav-link:hover::after,.nav-link.active::after { width:100% }
+.nav-search { position:relative; display:flex; align-items:center }
+.nav-search input {
+  background:rgba(255,255,255,.06); border:1px solid var(--border);
+  border-radius:4px; padding:8px 16px 8px 34px;
+  color:var(--text-prime); font-family:'DM Sans',sans-serif;
+  font-size:13px; width:210px; transition:all var(--t-med); outline:none;
+}
+.nav-search input:focus {
+  border-color:var(--gold); background:rgba(201,168,76,.05);
+  box-shadow:var(--glow-gold);
+}
+.nav-search-ico { position:absolute; left:11px; color:var(--text-muted); font-size:12px; pointer-events:none }
+
+/* ═══════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════ */
+#hero {
+  position:relative; height:100vh; min-height:600px;
+  display:flex; align-items:flex-end; overflow:hidden;
+}
+/* CHANGE: Hero skeleton overlay shown during initial load */
+#hero.loading .hero-bg { opacity:.3; filter:blur(8px); }
+#hero.loading .hero-content { opacity:1 }
+.hero-bg {
+  position:absolute; inset:0;
+  background-size:cover; background-position:center top;
+  transform:scale(1.05);
+  /* CHANGE: longer, smoother zoom + crossfade support */
+  transition:transform 9s ease, opacity .6s ease, background-image .4s ease;
+}
+#hero:hover .hero-bg { transform:scale(1.08) }
+.hero-grad {
+  position:absolute; inset:0;
+  background:
+    linear-gradient(to right,rgba(7,7,9,.95) 0%,rgba(7,7,9,.6) 50%,rgba(7,7,9,.1) 100%),
+    linear-gradient(to top,rgba(7,7,9,1) 0%,rgba(7,7,9,.4) 40%,transparent 70%);
+}
+.hero-content {
+  position:relative; z-index:2;
+  padding:0 80px 80px; max-width:680px;
+  animation:hreveal 1.2s var(--ease-out) forwards;
+}
+@keyframes hreveal { from{opacity:0;transform:translateY(32px)} to{opacity:1;transform:translateY(0)} }
+.hero-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(168,36,60,.15); border:1px solid rgba(168,36,60,.4);
+  color:var(--crimson-bright); font-size:11px; font-weight:600;
+  letter-spacing:2px; text-transform:uppercase;
+  padding:6px 14px; border-radius:2px; margin-bottom:20px;
+}
+.hero-title {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(40px,6vw,76px); font-weight:900;
+  line-height:1; letter-spacing:-1px; margin-bottom:16px;
+  text-shadow:0 4px 30px rgba(0,0,0,.5);
+}
+.hero-meta { display:flex; gap:18px; align-items:center; margin-bottom:20px; flex-wrap:wrap }
+.hero-mi { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary) }
+.hero-desc {
+  font-size:15px; line-height:1.7;
+  color:rgba(240,237,232,.75); margin-bottom:32px; max-width:500px;
+}
+.hero-acts { display:flex; gap:14px }
+.hero-dots { position:absolute; bottom:40px; right:80px; display:flex; gap:8px; z-index:10 }
+.hdot {
+  width:6px; height:6px; border-radius:50%;
+  background:rgba(255,255,255,.3); cursor:pointer;
+  transition:all var(--t-med);
+}
+.hdot.active { width:24px; border-radius:3px; background:var(--gold) }
+
+/* BUTTONS */
+.btn-p {
+  display:inline-flex; align-items:center; gap:10px;
+  background:var(--gold); color:#070709;
+  padding:14px 30px; font-family:'DM Sans',sans-serif;
+  font-weight:600; font-size:14px; border:none; border-radius:2px;
+  cursor:pointer;
+  /* CHANGE: snappier cubic-bezier lift */
+  transition:background var(--t-med), transform var(--t-med) var(--ease-bounce), box-shadow var(--t-med);
+}
+.btn-p:hover {
+  background:var(--gold-light); transform:translateY(-3px);
+  box-shadow:0 10px 32px rgba(201,168,76,.45);
+}
+.btn-p:active { transform:translateY(0); transition-duration:80ms }
+.btn-s {
+  display:inline-flex; align-items:center; gap:10px;
+  background:rgba(255,255,255,.08); color:var(--text-prime);
+  padding:14px 26px; font-family:'DM Sans',sans-serif;
+  font-weight:500; font-size:14px;
+  border:1px solid rgba(255,255,255,.15); border-radius:2px;
+  cursor:pointer; transition:all var(--t-med);
+}
+.btn-s:hover { background:rgba(255,255,255,.14); border-color:var(--gold); color:var(--gold) }
+.btn-s:active { transform:scale(.97); transition-duration:80ms }
+
+/* SECTIONS */
+.section { padding:60px }
+.sec-hdr { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:32px }
+.sec-title { font-family:'Playfair Display',serif; font-size:28px; font-weight:700 }
+.sec-title::before {
+  content:''; display:inline-block; width:4px; height:28px;
+  background:var(--gold); margin-right:14px; vertical-align:middle;
+  box-shadow:0 0 10px rgba(201,168,76,.5);
+}
+.sec-link {
+  font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--gold); cursor:pointer; transition:opacity var(--t-med);
+}
+.sec-link:hover { opacity:.7 }
+
+/* ═══════════════════════════════════════════════════════
+   MOVIE CARDS — enhanced hover with CSS cubic-bezier
+═══════════════════════════════════════════════════════ */
+.movies-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:24px;
+}
+.movie-card {
+  position:relative; border-radius:4px; overflow:hidden;
+  background:var(--bg-card); cursor:pointer;
+  /* CHANGE: Combined transition for transform+shadow+border */
+  transition:
+    transform var(--t-slow) var(--ease-bounce),
+    box-shadow var(--t-med) ease,
+    border-color var(--t-med);
+  /* CHANGE: Fade-in animation applied after load */
+  opacity:0; animation:cardReveal .4s var(--ease-out) forwards;
+}
+@keyframes cardReveal { to { opacity:1 } }
+.movie-card:hover {
+  transform:translateY(-10px) scale(1.025);
+  box-shadow:var(--card-shadow);
+  z-index:10;
+}
+.movie-card:active { transform:translateY(-4px) scale(1.01); transition-duration:100ms }
+.movie-poster { position:relative; overflow:hidden; aspect-ratio:2/3 }
+.movie-poster img {
+  width:100%; height:100%; object-fit:cover;
+  background:var(--bg-hover);
+  /* CHANGE: smoother zoom + fade-in on load */
+  transition:transform var(--t-slow) ease, opacity .4s ease;
+  opacity:0;
+}
+/* CHANGE: img becomes visible once loaded (JS sets .loaded) */
+.movie-poster img.loaded { opacity:1 }
+.movie-card:hover .movie-poster img { transform:scale(1.08) }
+.movie-ov {
+  position:absolute; inset:0;
+  background:linear-gradient(to top,rgba(7,7,9,.95),transparent 50%);
+  opacity:0;
+  transition:opacity var(--t-med) ease;
+  display:flex; flex-direction:column; justify-content:flex-end; padding:14px;
+}
+.movie-card:hover .movie-ov { opacity:1 }
+.movie-ov-btn {
+  background:var(--gold); color:#070709; border:none; border-radius:2px;
+  padding:10px; font-family:'DM Sans',sans-serif;
+  font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase;
+  cursor:pointer;
+  transition:background var(--t-fast), transform var(--t-fast) var(--ease-bounce);
+  width:100%;
+}
+.movie-ov-btn:hover { background:var(--gold-light); transform:scaleY(1.04) }
+.rate-badge {
+  position:absolute; top:10px; right:10px;
+  background:rgba(7,7,9,.85); border:1px solid var(--gold-dim);
+  border-radius:3px; padding:4px 8px;
+  display:flex; align-items:center; gap:4px;
+  font-size:12px; font-weight:600; color:var(--gold);
+}
+.movie-info { padding:14px 12px }
+.movie-title {
+  font-family:'Playfair Display',serif; font-size:15px; font-weight:700;
+  line-height:1.3; margin-bottom:6px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.movie-year { font-size:12px; color:var(--text-muted); margin-bottom:8px }
+.movie-genres { display:flex; gap:6px; flex-wrap:wrap }
+.gtag {
+  font-size:10px; font-weight:600; letter-spacing:.8px; text-transform:uppercase;
+  padding:3px 8px; border-radius:2px;
+  background:rgba(201,168,76,.08); border:1px solid var(--border);
+  color:var(--text-secondary);
+  transition:background var(--t-fast), color var(--t-fast);
+}
+.gtag:hover { background:rgba(201,168,76,.18); color:var(--gold) }
+
+/* ═══════════════════════════════════════════════════════
+   CHANGE: Advanced shimmer skeleton — gradient slide
+   Replaces old skpulse opacity animation with
+   a proper linear-gradient sweep (like Twitter/YouTube).
+═══════════════════════════════════════════════════════ */
+@keyframes shimmer {
+  0%   { background-position:-200% 0 }
+  100% { background-position: 200% 0 }
+}
+/* Shared shimmer mixin applied to all .sk-* elements */
+.sk-card,.sk-poster,.sk-line,.sk-circle,.sk-rect,.sk-hero-title,.sk-hero-meta,.sk-hero-desc {
+  background:linear-gradient(
+    90deg,
+    var(--sk-base)  0%,
+    var(--sk-base)  35%,
+    var(--sk-shine) 50%,
+    var(--sk-base)  65%,
+    var(--sk-base)  100%
+  );
+  background-size:200% 100%;
+  animation:shimmer 1.6s linear infinite;
+}
+.sk-card { border-radius:4px; overflow:hidden; background:var(--bg-card) }
+.sk-poster {
+  aspect-ratio:2/3;
+  background:linear-gradient(90deg,var(--sk-base) 0%,var(--sk-base) 35%,var(--sk-shine) 50%,var(--sk-base) 65%,var(--sk-base) 100%);
+  background-size:200% 100%; animation:shimmer 1.6s linear infinite;
+}
+.sk-line {
+  height:12px; border-radius:3px;
+  margin:8px 12px;
+}
+.sk-line.s { width:60%; margin-top:4px }
+.sk-line.xs { width:40%; margin-top:4px }
+.sk-line.tall { height:18px }
+/* CHANGE: Carousel skeleton — fixed width cards */
+.carousel .sk-card { flex:0 0 180px }
+/* CHANGE: Cast skeleton — square cards */
+.sk-circle {
+  width:100%; aspect-ratio:1; border-radius:0;
+}
+/* CHANGE: Stagger shimmer delay per child for wave effect */
+.sk-card:nth-child(2) .sk-poster, .sk-card:nth-child(2) .sk-line { animation-delay:.1s }
+.sk-card:nth-child(3) .sk-poster, .sk-card:nth-child(3) .sk-line { animation-delay:.2s }
+.sk-card:nth-child(4) .sk-poster, .sk-card:nth-child(4) .sk-line { animation-delay:.3s }
+.sk-card:nth-child(5) .sk-poster, .sk-card:nth-child(5) .sk-line { animation-delay:.4s }
+.sk-card:nth-child(6) .sk-poster, .sk-card:nth-child(6) .sk-line { animation-delay:.5s }
+.sk-card:nth-child(7) .sk-poster, .sk-card:nth-child(7) .sk-line { animation-delay:.6s }
+.sk-card:nth-child(8) .sk-poster, .sk-card:nth-child(8) .sk-line { animation-delay:.7s }
+
+/* CHANGE: Hero skeleton blocks */
+.sk-hero-title  { height:clamp(40px,6vw,76px); border-radius:4px; margin-bottom:16px; width:75% }
+.sk-hero-meta   { height:18px; border-radius:3px; margin-bottom:20px; width:50% }
+.sk-hero-desc   { height:80px; border-radius:3px; margin-bottom:32px; width:90% }
+
+/* CHANGE: Detail poster skeleton */
+.sk-det-poster {
+  width:200px; aspect-ratio:2/3; border-radius:4px;
+  flex-shrink:0; overflow:hidden;
+}
+.sk-rect {
+  height:100%; width:100%;
+}
+/* CHANGE: fade-in helper — applied to containers after data arrives */
+.fade-in {
+  animation:fadeIn var(--t-slow) var(--ease-out) forwards;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* CAROUSEL */
+.car-wrap { position:relative }
+.carousel {
+  display:flex; gap:20px; overflow-x:auto;
+  padding-bottom:12px; scroll-behavior:smooth;
+  -ms-overflow-style:none; scrollbar-width:none;
+  /* CHANGE: add momentum scrolling on mobile */
+  -webkit-overflow-scrolling:touch;
+}
+.carousel::-webkit-scrollbar { display:none }
+.carousel .movie-card { flex:0 0 180px }
+.car-btn {
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:44px; height:44px;
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  color:var(--text-prime); cursor:pointer;
+  transition:all var(--t-med) var(--ease-bounce); z-index:10;
+}
+.car-btn:hover { background:var(--gold); color:#070709; border-color:var(--gold); transform:translateY(-50%) scale(1.1) }
+.car-btn.prev { left:-22px }
+.car-btn.next { right:-22px }
+
+/* CATEGORIES */
+.cat-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:16px }
+.cat-card {
+  position:relative; border-radius:4px; overflow:hidden;
+  aspect-ratio:16/9; cursor:pointer; border:1px solid var(--border);
+  transition:transform var(--t-med) var(--ease-bounce), border-color var(--t-med), box-shadow var(--t-med);
+}
+.cat-card:hover {
+  border-color:var(--gold); transform:translateY(-5px) scale(1.02);
+  box-shadow:var(--glow-gold);
+}
+.cat-bg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:42px }
+.cat-ov {
+  position:absolute; inset:0; display:flex; align-items:flex-end;
+  padding:10px; background:linear-gradient(to top,rgba(0,0,0,.7),transparent);
+}
+.cat-label { font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:2px }
+
+/* ═══════════════════════════════════════════════════════
+   DETAIL PAGE
+═══════════════════════════════════════════════════════ */
+#detail-view .det-hero {
+  position:relative; height:70vh; min-height:500px;
+  display:flex; align-items:flex-end; overflow:hidden;
+}
+.det-bg {
+  position:absolute; inset:0;
+  background-size:cover; background-position:center;
+  filter:blur(2px); transform:scale(1.05);
+  transition:background-image .5s ease;
+}
+.det-ov {
+  position:absolute; inset:0;
+  background:
+    linear-gradient(to right,rgba(7,7,9,.98),rgba(7,7,9,.7) 50%,rgba(7,7,9,.3) 100%),
+    linear-gradient(to top,rgba(7,7,9,1),transparent 60%);
+}
+.det-content {
+  position:relative; z-index:2;
+  padding:40px 80px;
+  display:flex; gap:48px; align-items:flex-end; width:100%;
+}
+.det-poster {
+  width:200px; flex-shrink:0; border-radius:4px; overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 2px var(--border);
+  /* CHANGE: fade-in poster on detail load */
+  transition:opacity .5s ease;
+}
+.det-poster img { width:100%; display:block; opacity:0; transition:opacity .5s ease }
+.det-poster img.loaded { opacity:1 }
+.det-info { flex:1 }
+.det-genres { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap }
+.det-title {
+  font-family:'Playfair Display',serif;
+  font-size:clamp(36px,5vw,64px); font-weight:900;
+  line-height:1; margin-bottom:14px;
+}
+.det-meta { display:flex; gap:24px; margin-bottom:16px; flex-wrap:wrap }
+.det-mi { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary) }
+.det-mi i { color:var(--gold) }
+.det-rate {
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(201,168,76,.1); border:1px solid var(--gold-dim);
+  border-radius:4px; padding:8px 16px; margin-bottom:16px;
+}
+.rate-num { font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--gold); line-height:1 }
+.det-desc { font-size:15px; line-height:1.7; color:rgba(240,237,232,.8); max-width:600px }
+.det-acts { display:flex; gap:12px; margin-top:24px }
+.det-body { padding:40px 80px }
+.det-sec { margin-bottom:48px }
+.det-sec-title {
+  font-family:'Playfair Display',serif; font-size:22px; font-weight:700;
+  margin-bottom:24px; padding-bottom:12px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px;
+}
+.det-sec-title i { color:var(--gold); font-size:18px }
+
+/* CAST */
+.cast-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:16px }
+.cast-card {
+  text-align:center; background:var(--bg-card); border-radius:4px;
+  overflow:hidden; border:1px solid var(--border);
+  transition:transform var(--t-med) var(--ease-bounce), border-color var(--t-med);
+}
+.cast-card:hover { border-color:var(--gold); transform:translateY(-4px) }
+.cast-photo { width:100%; aspect-ratio:1; object-fit:cover; background:var(--bg-hover); opacity:0; transition:opacity .4s ease }
+.cast-photo.loaded { opacity:1 }
+.cast-info { padding:10px 8px }
+.cast-name { font-size:12px; font-weight:600; margin-bottom:2px }
+.cast-char { font-size:11px; color:var(--text-muted) }
+
+/* TRAILER */
+.trail-wrap {
+  position:relative; aspect-ratio:16/9; border-radius:4px; overflow:hidden;
+  background:var(--bg-card); border:1px solid var(--border);
+  cursor:pointer; max-width:800px;
+  transition:box-shadow var(--t-med);
+}
+.trail-wrap:hover { box-shadow:0 0 0 2px var(--gold-dim) }
+.trail-thumb { width:100%; height:100%; object-fit:cover; transition:transform var(--t-slow) ease; background:var(--bg-hover) }
+.trail-wrap:hover .trail-thumb { transform:scale(1.04) }
+.trail-play {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.3); transition:background var(--t-med);
+}
+.trail-wrap:hover .trail-play { background:rgba(0,0,0,.1) }
+.play-lg {
+  width:70px; height:70px;
+  background:rgba(201,168,76,.9); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; color:#070709;
+  transition:transform var(--t-med) var(--ease-bounce), background var(--t-med);
+  box-shadow:0 0 40px rgba(201,168,76,.4);
+}
+.trail-wrap:hover .play-lg { background:var(--gold-light); transform:scale(1.12) }
+
+/* GALLERY */
+.gal-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px }
+.gal-item {
+  aspect-ratio:16/9; border-radius:3px; overflow:hidden; cursor:pointer;
+  transition:transform var(--t-med) var(--ease-bounce);
+}
+.gal-item:hover { transform:scale(1.05); z-index:5; position:relative; box-shadow:0 8px 24px rgba(0,0,0,.5) }
+.gal-item img { width:100%; height:100%; object-fit:cover; background:var(--bg-hover); opacity:0; transition:opacity .4s ease }
+.gal-item img.loaded { opacity:1 }
+
+/* REVIEWS */
+.rv-form {
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-radius:6px; padding:24px; margin-bottom:28px;
+}
+.rv-form h4 { font-family:'Playfair Display',serif; font-size:18px; margin-bottom:16px; color:var(--gold) }
+.star-picker { display:flex; gap:6px; margin-bottom:14px }
+.sp { font-size:22px; color:var(--text-muted); cursor:pointer; transition:color var(--t-fast), transform var(--t-fast) var(--ease-bounce) }
+.sp:hover,.sp.on { color:var(--gold) }
+.sp:hover { transform:scale(1.2) }
+.rv-input {
+  width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:4px; padding:12px 16px; color:var(--text-prime);
+  font-family:'DM Sans',sans-serif; font-size:14px; resize:vertical;
+  min-height:100px; outline:none; transition:border-color var(--t-med);
+}
+.rv-input:focus { border-color:var(--gold) }
+.rv-sub {
+  margin-top:12px; background:var(--gold); color:#070709;
+  border:none; border-radius:2px; padding:10px 24px;
+  font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px;
+  cursor:pointer; transition:background var(--t-fast), transform var(--t-fast) var(--ease-bounce);
+}
+.rv-sub:hover { background:var(--gold-light); transform:translateY(-2px) }
+.rv-sub:active { transform:translateY(0); transition-duration:80ms }
+.rv-list { display:flex; flex-direction:column; gap:16px }
+.rv-card {
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-radius:6px; padding:20px 24px; transition:border-color var(--t-med), transform var(--t-med);
+}
+.rv-card:hover { border-color:rgba(201,168,76,.3); transform:translateX(4px) }
+.rv-hdr { display:flex; align-items:center; gap:14px; margin-bottom:12px }
+.rv-ava {
+  width:42px; height:42px; border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-dim),var(--crimson));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:16px; flex-shrink:0;
+}
+.rv-name { font-weight:600; font-size:14px } .rv-date { font-size:12px; color:var(--text-muted) }
+.rv-txt { font-size:14px; line-height:1.7; color:rgba(240,237,232,.8); margin-bottom:14px }
+.rv-acts { display:flex; gap:16px }
+.rv-btn {
+  background:none; border:1px solid var(--border); border-radius:3px;
+  padding:6px 12px; font-family:'DM Sans',sans-serif; font-size:12px;
+  color:var(--text-secondary); cursor:pointer;
+  transition:all var(--t-fast); display:flex; align-items:center; gap:6px;
+}
+.rv-btn:hover,.rv-btn.on { border-color:var(--gold); color:var(--gold) }
+
+/* FILTER BAR */
+.filter-bar {
+  display:flex; gap:12px; flex-wrap:wrap;
+  padding:16px 60px; background:var(--bg-deep);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:68px; z-index:100;
+  transition:background var(--t-slow);
+}
+.fsel {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:3px; padding:8px 14px; color:var(--text-prime);
+  font-family:'DM Sans',sans-serif; font-size:13px; outline:none;
+  cursor:pointer; transition:border-color var(--t-med), background var(--t-med);
+}
+.fsel:focus { border-color:var(--gold) }
+.fbtn {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:3px; padding:8px 14px; color:var(--text-secondary);
+  font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+  transition:all var(--t-med);
+}
+.fbtn:hover,.fbtn.active { border-color:var(--gold); color:var(--gold) }
+.fsearch {
+  flex:1; min-width:180px; background:var(--bg-card);
+  border:1px solid var(--border); border-radius:3px;
+  padding:8px 14px; color:var(--text-prime);
+  font-family:'DM Sans',sans-serif; font-size:13px; outline:none;
+  transition:border-color var(--t-med);
+}
+.fsearch:focus { border-color:var(--gold) }
+.rcount { color:var(--text-muted); font-size:13px; display:flex; align-items:center; white-space:nowrap }
+
+/* PAGE HEADER */
+.pg-hdr {
+  padding:120px 60px 40px; border-bottom:1px solid var(--border);
+  background:linear-gradient(to bottom,var(--bg-deep),var(--bg-void));
+}
+.pg-hdr h1 { font-family:'Playfair Display',serif; font-size:42px; font-weight:900 }
+.pg-hdr p { color:var(--text-secondary); margin-top:8px }
+
+/* ═══════════════════════════════════════════════════════
+   CHANGE: Infinite scroll sentinel + load-more indicator
+═══════════════════════════════════════════════════════ */
+#infiniteSentinel {
+  height:60px; display:flex; align-items:center; justify-content:center;
+  color:var(--text-muted); font-size:13px; gap:10px;
+  margin-top:16px;
+}
+#infiniteSentinel .inf-spinner {
+  width:20px; height:20px; border-radius:50%;
+  border:2px solid var(--border); border-top-color:var(--gold);
+  animation:spin .8s linear infinite; display:none;
+}
+#infiniteSentinel.loading .inf-spinner { display:block }
+@keyframes spin { to{transform:rotate(360deg)} }
+.inf-end-msg { font-size:13px; color:var(--text-muted); display:none }
+#infiniteSentinel.done .inf-end-msg { display:block }
+
+/* COMMUNITY */
+.comm-page { padding:100px 80px 60px }
+.comm-hdr { text-align:center; margin-bottom:48px }
+.comm-hdr h1 { font-family:'Playfair Display',serif; font-size:48px; font-weight:900; margin-bottom:12px }
+.comm-hdr p { color:var(--text-secondary); font-size:16px }
+.disc-grid { display:grid; grid-template-columns:2fr 1fr; gap:32px }
+.disc-card {
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-radius:6px; padding:20px; margin-bottom:16px; cursor:pointer;
+  transition:border-color var(--t-med), transform var(--t-med) var(--ease-out);
+}
+.disc-card:hover { border-color:var(--gold-dim); transform:translateX(5px) }
+.disc-ava { width:38px; height:38px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px }
+.disc-hdr { display:flex; gap:12px; align-items:flex-start; margin-bottom:10px }
+.disc-user { font-size:13px; font-weight:600 } .disc-time { font-size:11px; color:var(--text-muted) }
+.disc-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; margin-bottom:6px }
+.disc-pre { font-size:13px; color:var(--text-secondary); line-height:1.5; margin-bottom:12px }
+.disc-foot { display:flex; gap:16px }
+.disc-stat { font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:5px }
+.disc-stat i { color:var(--gold-dim) }
+.sw { background:var(--bg-panel); border:1px solid var(--border); border-radius:6px; padding:20px; margin-bottom:20px }
+.sw h3 { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; margin-bottom:16px; color:var(--gold) }
+.top-rev { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--border) }
+.top-rev:last-child { border-bottom:none }
+.top-rev-ava { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--crimson),var(--gold-dim)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0 }
+.top-rev-rank { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--gold) }
+
+/* MODAL */
+.modal-ov {
+  position:fixed; inset:0; z-index:2000;
+  background:rgba(0,0,0,.92); display:none;
+  align-items:center; justify-content:center; padding:40px;
+  /* CHANGE: fade in modal overlay */
+  opacity:0; transition:opacity var(--t-med);
+}
+.modal-ov.open { display:flex; opacity:1 }
+.modal-box {
+  background:var(--bg-panel); border:1px solid var(--border);
+  border-radius:8px; overflow:hidden;
+  width:100%; max-width:900px; position:relative;
+  /* CHANGE: scale in modal box */
+  transform:scale(.92); transition:transform var(--t-med) var(--ease-bounce);
+}
+.modal-ov.open .modal-box { transform:scale(1) }
+.modal-close {
+  position:absolute; top:14px; right:14px; z-index:10;
+  width:36px; height:36px; background:rgba(0,0,0,.7);
+  border:1px solid var(--border); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text-prime); cursor:pointer; font-size:14px; transition:all var(--t-med);
+}
+.modal-close:hover { border-color:var(--gold); color:var(--gold) }
+.modal-vid { width:100%; aspect-ratio:16/9; background:#000 }
+.modal-vid iframe { width:100%; height:100%; border:none }
+
+/* TOAST */
+.toast {
+  position:fixed; bottom:32px; right:32px;
+  background:var(--bg-panel); border:1px solid var(--gold-dim);
+  border-radius:4px; padding:14px 20px; font-size:14px;
+  color:var(--text-prime); display:flex; align-items:center; gap:10px;
+  z-index:3000; transform:translateY(80px); opacity:0;
+  transition:all .4s var(--ease-bounce);
+}
+.toast.show { transform:translateY(0); opacity:1 }
+.toast i { color:var(--gold) }
+
+/* BACK BTN */
+.back-btn {
+  display:inline-flex; align-items:center; gap:8px;
+  color:var(--text-secondary); cursor:pointer;
+  font-size:13px; font-weight:500; letter-spacing:1px;
+  text-transform:uppercase; transition:color var(--t-med), gap var(--t-med);
+  margin:80px 80px 0; padding-top:4px;
+}
+.back-btn:hover { color:var(--gold); gap:12px }
+
+/* FOOTER */
+footer {
+  padding:48px 80px; border-top:1px solid var(--border);
+  display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px;
+}
+.footer-desc { font-size:13px; color:var(--text-muted); line-height:1.7; max-width:280px; margin-top:16px }
+.fc h4 { font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:16px }
+.fl { display:flex; flex-direction:column; gap:8px }
+.fl a { font-size:13px; color:var(--text-secondary); cursor:pointer; transition:color var(--t-fast); text-decoration:none }
+.fl a:hover { color:var(--text-prime) }
+.foot-bot {
+  padding:20px 80px; border-top:1px solid rgba(255,255,255,.05);
+  display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted);
+}
+
+#no-res { display:none; text-align:center; padding:60px 20px; color:var(--text-muted) }
+#no-res i { font-size:48px; margin-bottom:16px; display:block; color:var(--gold-dim) }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media(max-width:1100px) {
+  .cat-grid { grid-template-columns:repeat(3,1fr) }
+  .disc-grid { grid-template-columns:1fr }
+  footer { grid-template-columns:1fr 1fr }
+}
+@media(max-width:768px) {
+  nav { padding:0 16px }
+  .nav-links { display:none }
+  .section { padding:36px 18px }
+  .hero-content { padding:0 22px 56px }
+  .cat-grid { grid-template-columns:repeat(2,1fr) }
+  .det-content { flex-direction:column; padding:20px }
+  .det-body { padding:20px }
+  .gal-grid { grid-template-columns:repeat(2,1fr) }
+  .filter-bar { padding:14px 18px; top:60px }
+  footer { grid-template-columns:1fr; padding:28px 20px }
+  .foot-bot { padding:14px 20px; flex-direction:column; gap:8px }
+  .comm-page { padding:80px 20px 40px }
+  .back-btn { margin:80px 20px 0 }
+  .movies-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px }
+  .hero-dots { right:20px }
+}
+@media(max-width:480px) {
+  .movies-grid { grid-template-columns:repeat(2,1fr); gap:12px }
+  .gal-grid { grid-template-columns:repeat(2,1fr) }
+  .det-poster { width:140px }
+}
+</style>
+</head>
+<body>
+
+<div id="loader-curtain">
+  <div class="curtain-logo">CINÉ<span>THÈQUE</span></div>
+</div>
+
+<!-- API STATUS BADGE -->
+<div class="api-badge loading" id="apiBadge">⚡ CONNECTING...</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     NAVBAR — added #themeToggle button (CHANGE)
+═══════════════════════════════════════════════════════ -->
+<nav id="navbar">
+  <div class="nav-logo" onclick="showView('home')">CINÉ<span>THÈQUE</span></div>
+  <div class="nav-links">
+    <span class="nav-link active" id="nl-home"   onclick="showView('home');setAct('home')">Home</span>
+    <span class="nav-link"        id="nl-movies" onclick="showView('movies');setAct('movies')">Movies</span>
+    <span class="nav-link"        id="nl-cats"   onclick="showView('home');setAct('home');setTimeout(()=>document.getElementById('cats-sec').scrollIntoView({behavior:'smooth'}),300)">Categories</span>
+    <span class="nav-link"        id="nl-comm"   onclick="showView('community');setAct('community')">Community</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <!-- Watchlist button -->
+    <div style="position:relative">
+      <button id="watchlistBtn" onclick="toggleWatchlist()" title="My Watchlist" style="width:38px;height:38px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;transition:all var(--t-med);font-size:15px;position:relative">
+        <i class="fas fa-heart"></i>
+        <span id="watchlistCount" style="position:absolute;top:-4px;right:-4px;background:var(--crimson-bright);color:#fff;font-size:9px;font-weight:700;border-radius:50%;width:16px;height:16px;display:none;align-items:center;justify-content:center">0</span>
+      </button>
+      <!-- Watchlist dropdown -->
+      <div id="watchlistPanel" style="position:absolute;top:calc(100% + 12px);right:0;width:320px;max-height:400px;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:none;flex-direction:column;z-index:2000;overflow:hidden">
+        <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <h3 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold)"><i class="fas fa-heart" style="margin-right:8px;font-size:14px"></i>My Watchlist</h3>
+          <button onclick="clearWatchlist()" style="background:none;border:1px solid var(--border);border-radius:3px;padding:4px 10px;font-size:11px;color:var(--text-secondary);cursor:pointer;transition:all var(--t-fast)" onmouseover="this.style.borderColor='var(--crimson)';this.style.color='var(--crimson)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">Clear All</button>
+        </div>
+        <div id="watchlistContent" style="overflow-y:auto;flex:1;padding:12px"></div>
+      </div>
+    </div>
+    <div class="nav-search">
+      <i class="fas fa-search nav-search-ico"></i>
+      <input type="text" placeholder="Search movies..." id="navSearch" oninput="handleNavSearch(this.value)">
+    </div>
+    <!-- User Profile / Sign In -->
+    <div style="position:relative">
+      <button id="userBtn" onclick="toggleUserMenu()" title="Account" style="width:38px;height:38px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;transition:all var(--t-med);font-size:15px;position:relative">
+        <i class="fas fa-user"></i>
+      </button>
+      <!-- User dropdown -->
+      <div id="userMenu" style="position:absolute;top:calc(100% + 12px);right:0;width:220px;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.5);display:none;flex-direction:column;z-index:2000;overflow:hidden">
+        <div id="userMenuContent"></div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ HOME VIEW ═══ -->
+<div id="home-view" class="view active">
+
+  <!-- HERO — skeleton shown while loading (CHANGE) -->
+  <section id="hero" class="loading">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-grad"></div>
+    <div class="hero-content" id="heroContent">
+      <!-- CHANGE: Hero skeleton blocks shown on first load -->
+      <div id="heroSkeleton">
+        <div class="sk-hero-title"></div>
+        <div class="sk-hero-meta"></div>
+        <div class="sk-hero-desc"></div>
+      </div>
+      <!-- Real content hidden until loaded -->
+      <div id="heroReal" style="display:none">
+        <div class="hero-badge"><i class="fas fa-fire"></i> FEATURED FILM</div>
+        <h1 class="hero-title" id="heroTitle">Loading...</h1>
+        <div class="hero-meta" id="heroMeta"></div>
+        <p class="hero-desc" id="heroDesc"></p>
+        <div class="hero-acts">
+          <button class="btn-p" id="heroPlayBtn"><i class="fas fa-play"></i> Watch Trailer</button>
+          <button class="btn-s" id="heroInfoBtn"><i class="fas fa-info-circle"></i> More Info</button>
+        </div>
+      </div>
+    </div>
+    <div class="hero-dots" id="heroDots"></div>
+  </section>
+
+  <section class="section">
+    <div class="sec-hdr">
+      <h2 class="sec-title">Featured Movies</h2>
+      <span class="sec-link" onclick="showView('movies');setAct('movies')">View All <i class="fas fa-arrow-right"></i></span>
+    </div>
+    <!-- Pre-filled with skeletons for instant loading perception -->
+    <div class="movies-grid" id="featGrid">
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+      <div class="sk-card"><div class="sk-poster"></div><div class="sk-line tall" style="margin-top:12px"></div><div class="sk-line s"></div><div class="sk-line xs"></div></div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="sec-hdr">
+      <h2 class="sec-title">Trending Now</h2>
+      <span class="sec-link" onclick="showView('movies');setAct('movies')">See More <i class="fas fa-arrow-right"></i></span>
+    </div>
+    <div class="car-wrap">
+      <button class="car-btn prev" onclick="scrollCar('trend',-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel" id="trendCar" data-swipe="true">
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+      </div>
+      <button class="car-btn next" onclick="scrollCar('trend',1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </section>
+
+  <section class="section" id="cats-sec" style="padding-top:0">
+    <div class="sec-hdr"><h2 class="sec-title">Explore Categories</h2></div>
+    <div class="cat-grid" id="catGrid">
+      <div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>
+      <div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>
+      <div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>
+      <div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>
+      <div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>
+      <div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="sec-hdr">
+      <h2 class="sec-title">Top Rated</h2>
+      <span class="sec-link" onclick="showView('movies');setAct('movies');setTimeout(()=>sortMovies('rating'),200)">All Top Rated <i class="fas fa-arrow-right"></i></span>
+    </div>
+    <div class="car-wrap">
+      <button class="car-btn prev" onclick="scrollCar('toprated',-1)"><i class="fas fa-chevron-left"></i></button>
+      <div class="carousel" id="topratedCar" data-swipe="true">
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+        <div class="sk-card" style="flex:0 0 180px"><div class="sk-poster"></div><div class="sk-line tall"></div><div class="sk-line s"></div></div>
+      </div>
+      <button class="car-btn next" onclick="scrollCar('toprated',1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <div class="nav-logo">CINÉ<span>THÈQUE</span></div>
+      <p class="footer-desc">Your ultimate destination for cinema discovery, community reviews, and film discussions.</p>
+    </div>
+    <div class="fc"><h4>Navigate</h4><div class="fl"><a onclick="showView('home')">Home</a><a onclick="showView('movies')">Movies</a><a onclick="showView('community')">Community</a></div></div>
+    <div class="fc"><h4>Genres</h4><div class="fl"><a onclick="filterByCat('Action')">Action</a><a onclick="filterByCat('Drama')">Drama</a><a onclick="filterByCat('Sci-Fi')">Sci-Fi</a><a onclick="filterByCat('Comedy')">Comedy</a></div></div>
+    <div class="fc"><h4>Follow Us</h4><div class="fl"><a><i class="fab fa-twitter"></i> Twitter</a><a><i class="fab fa-instagram"></i> Instagram</a><a><i class="fab fa-youtube"></i> YouTube</a></div></div>
+  </footer>
+  <div class="foot-bot"><span>© 2025 Cinémathèque.</span><span id="dataLbl">Powered by TMDB API</span></div>
+</div>
+
+<!-- ═══ MOVIES VIEW ═══ -->
+<div id="movies-view" class="view">
+  <div class="pg-hdr">
+    <h1 class="sec-title">All Movies</h1>
+    <p>Discover films across every genre and era</p>
+  </div>
+  <div class="filter-bar">
+    <input type="text" class="fsearch" placeholder="🔍  Search movies..." id="mSearch" oninput="filterMovies()">
+    <select class="fsel" id="gFilter" onchange="filterMovies()">
+      <option value="">All Genres</option>
+      <option>Action</option><option>Adventure</option><option>Animation</option><option>Comedy</option>
+      <option>Crime</option><option>Drama</option><option>Fantasy</option><option>Horror</option>
+      <option>Romance</option><option>Sci-Fi</option><option>Thriller</option><option>War</option>
+    </select>
+    <select class="fsel" id="yFilter" onchange="filterMovies()">
+      <option value="">All Years</option>
+      <option>2025</option><option>2024</option><option>2023</option><option>2022</option>
+      <option>2021</option><option>2020</option><option>2019</option><option>2018</option>
+      <option value="old">Before 2018</option>
+    </select>
+    <select class="fsel" id="rFilter" onchange="filterMovies()">
+      <option value="0">All Ratings</option>
+      <option value="9">9+ Stars</option><option value="8">8+ Stars</option>
+      <option value="7">7+ Stars</option><option value="6">6+ Stars</option>
+    </select>
+    <button class="fbtn active" onclick="sortMovies('pop');setFBtn(this)">Popular</button>
+    <button class="fbtn"        onclick="sortMovies('rating');setFBtn(this)">Top Rated</button>
+    <button class="fbtn"        onclick="sortMovies('year');setFBtn(this)">Newest</button>
+    <span class="rcount" id="rCount"></span>
+  </div>
+  <div class="section">
+    <div class="movies-grid" id="allGrid"></div>
+    <div id="no-res"><i class="fas fa-film"></i><br>No movies match your filters.<br><small style="color:var(--text-muted)">Try different criteria.</small></div>
+    <!-- CHANGE: infinite scroll sentinel -->
+    <div id="infiniteSentinel">
+      <div class="inf-spinner"></div>
+      <span class="inf-end-msg">You've reached the end · <a style="color:var(--gold);cursor:pointer" onclick="resetInfinite()">Back to top</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DETAIL VIEW ═══ -->
+<div id="detail-view" class="view">
+  <div class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Back</div>
+  <div class="det-hero">
+    <div class="det-bg" id="detBg"></div>
+    <div class="det-ov"></div>
+    <div class="det-content">
+      <!-- CHANGE: Detail poster with skeleton while loading -->
+      <div class="det-poster" id="detPosterWrap">
+        <img id="detPoster" src="" alt="" onload="this.classList.add('loaded')">
+      </div>
+      <div class="det-info">
+        <div class="det-genres" id="detGenres"></div>
+        <h1 class="det-title"  id="detTitle"></h1>
+        <div class="det-meta"  id="detMeta"></div>
+        <div class="det-rate"  id="detRate"></div>
+        <p class="det-desc"    id="detDesc"></p>
+        <div class="det-acts">
+          <button class="btn-p" id="detPlayBtn"><i class="fas fa-play"></i> Watch Trailer</button>
+          <button class="btn-s" id="detFavBtn" onclick="toggleFav()"><i class="far fa-heart"></i> Add to List</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="det-body">
+    <div class="det-sec">
+      <h3 class="det-sec-title"><i class="fas fa-users"></i> Cast &amp; Crew</h3>
+      <div class="cast-grid" id="castGrid"></div>
+    </div>
+    <div class="det-sec">
+      <h3 class="det-sec-title"><i class="fas fa-film"></i> Trailer</h3>
+      <div class="trail-wrap" id="trailWrap" onclick="openModal()">
+        <img class="trail-thumb" id="trailThumb" src="" alt="" onload="this.classList.add('loaded')">
+        <div class="trail-play"><div class="play-lg"><i class="fas fa-play" style="margin-left:4px"></i></div></div>
+      </div>
+    </div>
+    <div class="det-sec">
+      <h3 class="det-sec-title"><i class="fas fa-images"></i> Photo Gallery</h3>
+      <div class="gal-grid" id="galGrid"></div>
+    </div>
+    <div class="det-sec">
+      <h3 class="det-sec-title"><i class="fas fa-comment-alt"></i> Community Reviews</h3>
+      <div class="rv-form">
+        <h4>Write a Review</h4>
+        <div class="star-picker" id="starPicker">
+          <i class="fas fa-star sp" onclick="setStar(1)"></i>
+          <i class="fas fa-star sp" onclick="setStar(2)"></i>
+          <i class="fas fa-star sp" onclick="setStar(3)"></i>
+          <i class="fas fa-star sp" onclick="setStar(4)"></i>
+          <i class="fas fa-star sp" onclick="setStar(5)"></i>
+        </div>
+        <textarea class="rv-input" id="rvText" placeholder="Share your thoughts about this film..."></textarea>
+        <button class="rv-sub" onclick="submitReview()">Post Review</button>
+      </div>
+      <div class="rv-list" id="rvList"></div>
+    </div>
+  </div>
+  <footer>
+    <div><div class="nav-logo">CINÉ<span>THÈQUE</span></div><p class="footer-desc">Your ultimate destination for cinema discovery.</p></div>
+    <div class="fc"><h4>Navigate</h4><div class="fl"><a onclick="showView('home')">Home</a><a onclick="showView('movies')">Movies</a></div></div>
+    <div class="fc"><h4>Community</h4><div class="fl"><a onclick="showView('community')">Discussions</a><a onclick="showView('community')">Reviews</a></div></div>
+    <div class="fc"><h4>Follow Us</h4><div class="fl"><a><i class="fab fa-twitter"></i> Twitter</a><a><i class="fab fa-instagram"></i> Instagram</a></div></div>
+  </footer>
+</div>
+
+<!-- ═══ COMMUNITY VIEW ═══ -->
+<div id="community-view" class="view">
+  <div class="comm-page">
+    <div class="comm-hdr">
+      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.1);border:1px solid var(--gold-dim);border-radius:20px;padding:4px 14px;font-size:12px;color:var(--gold);margin-bottom:16px"><i class="fas fa-users"></i> FILM COMMUNITY</div>
+      <h1>Join the Conversation</h1>
+      <p>Discuss films, share reviews, and connect with fellow cinephiles</p>
+    </div>
+    <div class="disc-grid">
+      <div>
+        <div id="discList"></div>
+        <div class="rv-form" style="margin-top:24px">
+          <h4><i class="fas fa-pencil-alt" style="margin-right:8px"></i>Start a Discussion</h4>
+          <input type="text" class="rv-input" id="discTitle" placeholder="Discussion title..." style="min-height:auto;height:44px;margin-bottom:10px;display:block">
+          <textarea class="rv-input" id="discBody" placeholder="What's on your mind about cinema?"></textarea>
+          <button class="rv-sub" onclick="postDisc()"><i class="fas fa-paper-plane" style="margin-right:6px"></i>Post Discussion</button>
+        </div>
+      </div>
+      <div>
+        <div class="sw"><h3><i class="fas fa-trophy" style="margin-right:8px"></i>Top Reviewers</h3><div id="topRevs"></div></div>
+        <div class="sw"><h3><i class="fas fa-fire" style="margin-right:8px"></i>Trending Topics</h3><div id="trendTopics"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TRAILER MODAL -->
+<div class="modal-ov" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></div>
+    <div class="modal-vid"><iframe id="modalFrame" src="" allowfullscreen allow="autoplay"></iframe></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT — Enhanced with:
+     1. Shimmer skeletons on all grids (auto-shown before fetch)
+     2. IntersectionObserver for lazy sequential image loading
+     3. Touch-swipe support on carousels
+     4. Infinite scroll on movies grid (page 2/3 fetch from TMDB)
+     5. Dark/light mode toggle
+     6. Staggered card fade-in animation
+     7. Hero skeleton shown/hidden around data load
+═══════════════════════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════
+   API KEY POOLS — all 17 TMDB + 15 OMDB keys
+═══════════════════════════════════════════ */
+const TMDB_KEYS = [
+  'fb7bb23f03b6994dafc674c074d01761','e55425032d3d0f371fc776f302e7c09b',
+  '8301a21598f8b45668d5711a814f01f6','8cf43ad9c085135b9479ad5cf6bbcbda',
+  'da63548086e399ffc910fbc08526df05','13e53ff644a8bd4ba37b3e1044ad24f3',
+  '269890f657dddf4635473cf4cf456576','a2f888b27315e62e471b2d587048f32e',
+  '8476a7ab80ad76f0936744df0430e67c','5622cafbfe8f8cfe358a29c53e19bba0',
+  'ae4bd1b6fce2a5648671bfc171d15ba4','257654f35e3dff105574f97fb4b97035',
+  '2f4038e83265214a0dcd6ec2eb3276f5','9e43f45f94705cc8e1d5a0400d19a7b7',
+  'af6887753365e14160254ac7f4345dd2','06f10fc8741a672af455421c239a1ffc',
+  '09ad8ace66eec34302943272db0e8d2c'
+];
+const OMDB_KEYS = [
+  'a82ecf21','4b447405','eb0c0475','7776cbde','ff28f90b','6c3a2d45',
+  'b07b58c8','ad04b643','a95b5205','777d9323','2c2c3314','b5cff164',
+  '89a9f57d','73a9858a','efbd8357'
+];
+
+/* Key-rotation state */
+const KS = {
+  tmdb:{ keys:TMDB_KEYS, idx:0, dead:new Set() },
+  omdb:{ keys:OMDB_KEYS, idx:0, dead:new Set() }
+};
+
+/* ═══════════════════════════════════════════
+   ROBUST FETCH — key rotation + retry
+═══════════════════════════════════════════ */
+async function apiFetch(prov, urlFn, depth=0) {
+  const st=KS[prov];
+  const alive=st.keys.filter((_,i)=>!st.dead.has(i));
+  if(!alive.length||depth>=st.keys.length) throw new Error(`${prov}: all keys exhausted`);
+  let tries=0;
+  while(st.dead.has(st.idx)&&tries++<st.keys.length)
+    st.idx=(st.idx+1)%st.keys.length;
+  const key=st.keys[st.idx];
+  let res;
+  try {
+    res=await fetch(urlFn(key),{signal:AbortSignal.timeout(2000)});
+  } catch(e) {
+    st.dead.add(st.idx); st.idx=(st.idx+1)%st.keys.length;
+    return apiFetch(prov,urlFn,depth+1);
+  }
+  if(res.status===401||res.status===403){
+    st.dead.add(st.idx); st.idx=(st.idx+1)%st.keys.length;
+    return apiFetch(prov,urlFn,depth+1);
+  }
+  if(res.status===429){
+    st.idx=(st.idx+1)%st.keys.length;
+    await new Promise(r=>setTimeout(r,800));
+    return apiFetch(prov,urlFn,depth+1);
+  }
+  if(!res.ok) throw new Error(`${prov} HTTP ${res.status}`);
+  const data=await res.json();
+  if(prov==='omdb'&&data.Response==='False'){
+    st.idx=(st.idx+1)%st.keys.length;
+    return apiFetch(prov,urlFn,depth+1);
+  }
+  return data;
+}
+
+const tmdbFetch=(ep,params={})=>apiFetch('tmdb',key=>{
+  const u=new URL('https://api.themoviedb.org/3'+ep);
+  u.searchParams.set('api_key',key);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  return u.toString();
+});
+const omdbFetch=(params={})=>apiFetch('omdb',key=>{
+  const u=new URL('https://www.omdbapi.com/');
+  u.searchParams.set('apikey',key);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  return u.toString();
+});
+const IMG=(path,sz='w500')=>path?`https://image.tmdb.org/t/p/${sz}${path}`:null;
+
+/* ═══════════════════════════════════════════
+   GENRE MAP
+═══════════════════════════════════════════ */
+const GM={28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',99:'Documentary',
+  18:'Drama',10751:'Family',14:'Fantasy',36:'History',27:'Horror',10402:'Music',
+  9648:'Mystery',10749:'Romance',878:'Sci-Fi',53:'Thriller',10752:'War',37:'Western'};
+const gn=ids=>(ids||[]).slice(0,3).map(i=>GM[i]).filter(Boolean);
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let allMovies=[], filteredMovies=[], heroMovies=[], heroIdx=0;
+let curMovie=null, prevView='home', curView='home';
+let trailerKey='', starVal=0;
+let favs=new Set(), userRevs={}, discs=[];
+let heroTimer=null, apiMode='loading';
+let watchlistOpen=false;
+
+/* CHANGE: Infinite scroll state */
+let infPage=1, infLoading=false, infExhausted=false, infRendered=0;
+const INF_PER_PAGE=20; // cards per "page"
+
+/* ═══════════════════════════════════════════
+   CHANGE: Dark/light mode toggle
+═══════════════════════════════════════════ */
+function toggleTheme() {
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeIcon').className = isDark?'fas fa-sun':'fas fa-moon';
+  // Persist preference
+  try { localStorage.setItem('cine-theme', isDark?'light':'dark'); } catch(_){}
+}
+// Restore preference on load
+(function(){
+  try {
+    const saved=localStorage.getItem('cine-theme');
+    if(saved==='light'){
+      document.documentElement.setAttribute('data-theme','light');
+      document.addEventListener('DOMContentLoaded',()=>{
+        const ic=document.getElementById('themeIcon');
+        if(ic) ic.className='fas fa-sun';
+      });
+    }
+  } catch(_){}
+})();
+
+/* ═══════════════════════════════════════════
+   CHANGE: Advanced skeleton builder
+   All grid skeletons use the new shimmer style.
+   Carousel skeletons are fixed-width cards.
+   Cast skeletons are square (circle variant).
+═══════════════════════════════════════════ */
+function skeletons(n, type='grid') {
+  if(type==='carousel') {
+    return Array(n).fill(`
+      <div class="sk-card" style="flex:0 0 180px">
+        <div class="sk-poster"></div>
+        <div class="sk-line tall"></div>
+        <div class="sk-line s"></div>
+      </div>`).join('');
+  }
+  if(type==='cast') {
+    return Array(n).fill(`
+      <div class="sk-card">
+        <div class="sk-circle"></div>
+        <div class="sk-line" style="margin:8px 12px 4px"></div>
+        <div class="sk-line xs"></div>
+      </div>`).join('');
+  }
+  if(type==='category') {
+    return Array(n).fill('<div class="cat-card"><div class="sk-rect" style="height:100%"></div></div>').join('');
+  }
+  // Default grid skeleton
+  return Array(n).fill(`
+    <div class="sk-card">
+      <div class="sk-poster"></div>
+      <div class="sk-line tall" style="margin-top:12px"></div>
+      <div class="sk-line s"></div>
+      <div class="sk-line xs"></div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   CHANGE: IntersectionObserver for lazy images
+   Replaces bare loading="lazy" — gives us
+   sequential fade-in as cards scroll into view.
+═══════════════════════════════════════════ */
+let imgObserver = null;
+function setupImgObserver() {
+  if(imgObserver) imgObserver.disconnect();
+  imgObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(!entry.isIntersecting) return;
+      const img=entry.target;
+      const src=img.dataset.src;
+      if(src&&img.src!==src){
+        img.src=src;
+        img.onload=()=>img.classList.add('loaded');
+        img.onerror=()=>{
+          img.src=img.dataset.fallback||'';
+          img.classList.add('loaded');
+        };
+      }
+      imgObserver.unobserve(img);
+    });
+  },{rootMargin:'200px 0px'});
+}
+
+/* Observe all lazy-src images in a container */
+function observeLazyImgs(container) {
+  if(!imgObserver) setupImgObserver();
+  container.querySelectorAll('img[data-src]').forEach(img=>imgObserver.observe(img));
+}
+
+/* ═══════════════════════════════════════════
+   CHANGE: Touch-swipe support for carousels
+   Attaches touchstart/touchmove/touchend to
+   any .carousel with data-swipe="true"
+═══════════════════════════════════════════ */
+function attachSwipe(el) {
+  let startX=0, startScroll=0, dragging=false;
+  el.addEventListener('touchstart',e=>{
+    startX=e.touches[0].clientX;
+    startScroll=el.scrollLeft;
+    dragging=true;
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!dragging) return;
+    const dx=startX-e.touches[0].clientX;
+    el.scrollLeft=startScroll+dx;
+  },{passive:true});
+  el.addEventListener('touchend',()=>{ dragging=false; },{passive:true});
+  // Also enable mouse drag on desktop
+  el.addEventListener('mousedown',e=>{
+    startX=e.clientX; startScroll=el.scrollLeft; dragging=true;
+    el.style.cursor='grabbing'; el.style.userSelect='none';
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!dragging) return;
+    const dx=startX-e.clientX;
+    el.scrollLeft=startScroll+dx;
+  },{passive:true});
+  window.addEventListener('mouseup',()=>{
+    dragging=false;
+    el.style.cursor=''; el.style.userSelect='';
+  },{passive:true});
+}
+
+function attachAllSwipes() {
+  document.querySelectorAll('.carousel[data-swipe="true"]').forEach(attachSwipe);
+}
+
+/* ═══════════════════════════════════════════
+   CHANGE: Staggered card fade-in
+   Each card in a grid gets an animation-delay
+   proportional to its position (capped at 600ms)
+═══════════════════════════════════════════ */
+function staggerCards(container) {
+  const cards=container.querySelectorAll('.movie-card');
+  cards.forEach((c,i)=>{
+    c.style.animationDelay=`${Math.min(i*40,600)}ms`;
+  });
+}
+
+/* Escape HTML */
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+/* ═══════════════════════════════════════════
+   INIT — TMDB → OMDB → EMBEDDED
+   CHANGE: Show skeletons immediately before fetch
+═══════════════════════════════════════════ */
+async function init() {
+  badge('loading','⚡ CONNECTING...');
+
+  // CHANGE: Pre-fill all grids with shimmer skeletons immediately
+  document.getElementById('featGrid').innerHTML    = skeletons(8,'grid');
+  document.getElementById('trendCar').innerHTML    = skeletons(10,'carousel');
+  document.getElementById('topratedCar').innerHTML = skeletons(10,'carousel');
+  document.getElementById('catGrid').innerHTML     = skeletons(6,'category');
+  document.getElementById('allGrid').innerHTML     = skeletons(16,'grid');
+  document.getElementById('castGrid').innerHTML    = skeletons(6,'cast');
+
+  /* ── Try TMDB ── */
+  try {
+    const [pop,top,trend,up]=await Promise.all([
+      tmdbFetch('/movie/popular',  {page:1}),
+      tmdbFetch('/movie/top_rated',{page:1}),
+      tmdbFetch('/trending/movie/week'),
+      tmdbFetch('/movie/upcoming', {page:1})
+    ]);
+    let raw=[...pop.results,...top.results,...trend.results,...up.results];
+    try{const p2=await tmdbFetch('/movie/popular',{page:2});raw=[...raw,...p2.results];}catch(_){}
+    try{const p3=await tmdbFetch('/movie/now_playing',{page:1});raw=[...raw,...p3.results];}catch(_){}
+
+    allMovies=dedup(raw).filter(m=>m.poster_path).map(normTMDB);
+    badge('live','✓ TMDB LIVE');
+    document.getElementById('dataLbl').textContent=`Powered by TMDB · ${allMovies.length} movies`;
+    apiMode='tmdb';
+    boot();
+    return;
+  } catch(e){ console.warn('TMDB failed:',e.message); }
+
+  /* ── Try OMDB ── */
+  try {
+    const results=await Promise.allSettled(
+      EMBEDDED.slice(0,24).map(m=>omdbFetch({t:m.title,type:'movie',plot:'short'}))
+    );
+    const om=results.filter(r=>r.status==='fulfilled').map(r=>normOMDB(r.value)).filter(m=>m.title);
+    if(om.length>=5){
+      allMovies=om;
+      badge('live','✓ OMDB LIVE');
+      document.getElementById('dataLbl').textContent=`Powered by OMDB · ${allMovies.length} movies`;
+      apiMode='omdb'; boot(); return;
+    }
+  } catch(e){ console.warn('OMDB failed:',e.message); }
+
+  /* ── Embedded fallback ── */
+  allMovies=EMBEDDED.map(normEmbed);
+  badge('fallback','● OFFLINE MODE');
+  document.getElementById('dataLbl').textContent=`Offline Mode · ${allMovies.length} movies`;
+  apiMode='embedded';
+  boot();
+}
+
+function dedup(arr){
+  const seen=new Set();
+  return arr.filter(m=>{if(seen.has(m.id))return false;seen.add(m.id);return true;});
+}
+function normTMDB(m){
+  return{...m,genres:gn(m.genre_ids||[]),rating:+((m.vote_average||7).toFixed(1)),
+    year:(m.release_date||'2024').slice(0,4),source:'tmdb'};
+}
+function normOMDB(m){
+  if(!m||m.Response==='False')return{title:null};
+  const r=parseFloat((m.imdbRating||'7').replace('N/A','7'))||7;
+  return{id:m.imdbID||Math.random(),title:m.Title,overview:m.Plot,
+    rating:+r.toFixed(1),year:m.Year||'2024',
+    genres:(m.Genre||'').split(',').map(g=>g.trim()).slice(0,3),
+    poster_path:null,backdrop_path:null,
+    poster_override:m.Poster!=='N/A'?m.Poster:null,
+    vote_count:parseInt((m.imdbVotes||'0').replace(/,/g,''))||0,
+    original_language:(m.Language||'en').split(',')[0].slice(0,2).toLowerCase(),
+    popularity:r*1000,runtime:m.Runtime,director:m.Director,actors:m.Actors,source:'omdb'};
+}
+function normEmbed(m){return{...m,source:'embedded',poster_path:null,backdrop_path:null};}
+
+function badge(type,txt){
+  const b=document.getElementById('apiBadge');
+  b.textContent=txt; b.className='api-badge '+type;
+  setTimeout(()=>b.classList.add('hide'),4500);
+  setTimeout(()=>b.style.display='none',5000);
+}
+
+/* ═══════════════════════════════════════════
+   BOOTSTRAP
+═══════════════════════════════════════════ */
+function boot(){
+  filteredMovies=[...allMovies];
+  heroMovies=allMovies.slice(0,6);
+  loadUser();
+  loadFavs();
+  loadRVs();
+  loadDiscs();
+  setupImgObserver();
+  buildHero();
+  buildFeat();
+  buildTrend();
+  buildCats();
+  buildTopRated();
+  buildAllMovies(true); // CHANGE: pass reset=true
+  buildComm();
+  attachAllSwipes();
+  setupInfiniteScroll(); 
+  if(heroTimer)clearInterval(heroTimer);
+  heroTimer=setInterval(nextHero,7000);
+  window.addEventListener('scroll',()=>{
+    document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50);
+  },{passive:true});
+
+  // Restore saved view
+  try {
+    const savedView = localStorage.getItem('cine_current_view');
+    if(savedView && ['home','movies','community'].includes(savedView)){
+      showView(savedView); setAct(savedView);
+    }
+  } catch(_){}
+}
+
+/* ═══════════════════════════════════════════
+   HERO — CHANGE: skeleton shown/hidden
+═══════════════════════════════════════════ */
+function buildHero(){
+  renderHero(heroMovies[heroIdx]);
+  document.getElementById('heroDots').innerHTML=heroMovies.map((_,i)=>
+    `<div class="hdot${i===0?' active':''}" onclick="goHero(${i})"></div>`).join('');
+}
+
+function renderHero(m){
+  if(!m)return;
+  const heroEl=document.getElementById('hero');
+  const sk=document.getElementById('heroSkeleton');
+  const real=document.getElementById('heroReal');
+
+  // Set background
+  const bg=bgUrl(m);
+  const bgEl=document.getElementById('heroBg');
+  bgEl.style.backgroundImage=`url('${bg}')`;
+
+  // Fill real content
+  document.getElementById('heroTitle').textContent=m.title;
+  document.getElementById('heroDesc').textContent=(m.overview||'').slice(0,200)+(m.overview&&m.overview.length>200?'…':'');
+  document.getElementById('heroMeta').innerHTML=
+    `<span class="hero-mi">${stars(m.rating/2)} <strong style="color:var(--gold)">${m.rating}</strong>/10</span>
+     <span class="hero-mi"><i class="far fa-calendar"></i> ${m.year}</span>
+     ${m.genres[0]?`<span class="hero-mi"><i class="fas fa-tag"></i> ${m.genres.join(' · ')}</span>`:''}`;
+  document.getElementById('heroInfoBtn').onclick=()=>showDetail(m);
+  document.getElementById('heroPlayBtn').onclick=()=>{showDetail(m);setTimeout(openModal,900);};
+
+  // CHANGE: Swap skeleton → real with fade
+  sk.style.display='none';
+  real.style.display='block';
+  real.classList.add('fade-in');
+  heroEl.classList.remove('loading');
+}
+
+function goHero(i){
+  heroIdx=i; renderHero(heroMovies[i]);
+  document.querySelectorAll('.hdot').forEach((d,j)=>d.classList.toggle('active',j===i));
+}
+function nextHero(){ goHero((heroIdx+1)%heroMovies.length); }
+
+/* ═══════════════════════════════════════════
+   IMAGE HELPERS
+═══════════════════════════════════════════ */
+function posterUrl(m){
+  if(m.poster_path) return IMG(m.poster_path,'w500');
+  if(m.poster_override) return m.poster_override;
+  return `https://picsum.photos/seed/${m.id}p/300/450`;
+}
+function bgUrl(m){
+  if(m.backdrop_path) return IMG(m.backdrop_path,'original');
+  if(m.poster_path)   return IMG(m.poster_path,'original');
+  if(m.poster_override) return m.poster_override;
+  return `https://picsum.photos/seed/${m.id}b/1280/720`;
+}
+
+/* ═══════════════════════════════════════════
+   MOVIE CARD — CHANGE: uses data-src for lazy loading
+   Removes src="" (avoids eager browser fetch).
+   IntersectionObserver handles actual load.
+═══════════════════════════════════════════ */
+function movieCard(m){
+  const p=posterUrl(m);
+  const tags=m.genres.slice(0,2).map(g=>`<span class="gtag">${g}</span>`).join('');
+  const sid=JSON.stringify(String(m.id));
+  const fallback=`https://picsum.photos/seed/e${m.id}/300/450`;
+  return `<div class="movie-card" onclick='openById(${sid})'>
+    <div class="movie-poster">
+      <img data-src="${p}" data-fallback="${fallback}" alt="${esc(m.title)}" loading="lazy">
+      <div class="rate-badge"><i class="fas fa-star" style="color:var(--gold);font-size:10px"></i> ${m.rating}</div>
+      <div class="movie-ov">
+        <button class="movie-ov-btn" onclick='event.stopPropagation();openById(${sid})'>View Details</button>
+      </div>
+    </div>
+    <div class="movie-info">
+      <div class="movie-title">${esc(m.title)}</div>
+      <div class="movie-year">${m.year}${m.original_language?' · '+m.original_language.toUpperCase():''}</div>
+      <div class="movie-genres">${tags}</div>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════
+   GRIDS / CAROUSELS
+   CHANGE: All grids fade-in + stagger + observe
+═══════════════════════════════════════════ */
+function buildFeat(){
+  const g=document.getElementById('featGrid');
+  g.innerHTML=skeletons(8,'grid');
+  // Short delay so skeleton is visible briefly
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    g.innerHTML=allMovies.slice(0,8).map(movieCard).join('');
+    g.classList.add('fade-in');
+    staggerCards(g);
+    observeLazyImgs(g);
+  }));
+}
+
+function buildTrend(){
+  const c=document.getElementById('trendCar');
+  c.innerHTML=allMovies.slice(6,22).map(movieCard).join('');
+  staggerCards(c);
+  observeLazyImgs(c);
+}
+
+function buildTopRated(){
+  const s=[...allMovies].sort((a,b)=>b.rating-a.rating);
+  const c=document.getElementById('topratedCar');
+  c.innerHTML=s.slice(0,20).map(movieCard).join('');
+  staggerCards(c);
+  observeLazyImgs(c);
+}
+
+/* ═══════════════════════════════════════════
+   INFINITE SCROLL — movies page
+   CHANGE: Renders INF_PER_PAGE cards at a time.
+   Scroll listener triggers next batch.
+   If apiMode=tmdb, fetches additional TMDB pages.
+═══════════════════════════════════════════ */
+function buildAllMovies(reset=false){
+  if(reset){
+    infPage=1; infRendered=0; infExhausted=false;
+    const s=document.getElementById('infiniteSentinel');
+    s.className=''; // reset sentinel classes
+  }
+  const g=document.getElementById('allGrid');
+  const nr=document.getElementById('no-res');
+  document.getElementById('rCount').textContent=filteredMovies.length+' films';
+
+  if(!filteredMovies.length){
+    g.innerHTML=''; nr.style.display='block'; return;
+  }
+  nr.style.display='none';
+
+  // CHANGE: Only render first INF_PER_PAGE initially
+  const slice=filteredMovies.slice(0,INF_PER_PAGE);
+  g.innerHTML=slice.map(movieCard).join('');
+  infRendered=slice.length;
+  staggerCards(g);
+  observeLazyImgs(g);
+
+  // Check if there's more
+  if(infRendered>=filteredMovies.length && !canFetchMoreTMDB()){
+    markInfiniteExhausted();
+  }
+}
+
+function canFetchMoreTMDB(){
+  return apiMode==='tmdb' && infPage<4; // allow up to page 4
+}
+
+async function loadMoreMovies(){
+  if(infLoading||infExhausted) return;
+  infLoading=true;
+  const s=document.getElementById('infiniteSentinel');
+  s.className='loading';
+
+  // CHANGE: First exhaust filtered array, then fetch new TMDB page
+  if(infRendered < filteredMovies.length){
+    // More in current filteredMovies
+    const next=filteredMovies.slice(infRendered, infRendered+INF_PER_PAGE);
+    appendMovieCards(next);
+    infRendered+=next.length;
+    if(infRendered>=filteredMovies.length && !canFetchMoreTMDB()) markInfiniteExhausted();
+  } else if(canFetchMoreTMDB()) {
+    // CHANGE: Fetch next TMDB page
+    infPage++;
+    try {
+      const res=await tmdbFetch('/movie/popular',{page:infPage});
+      const newMovies=dedup([...res.results],allMovies).filter(m=>m.poster_path).map(normTMDB);
+      if(newMovies.length){
+        allMovies=[...allMovies,...newMovies];
+        filteredMovies=[...filteredMovies,...newMovies];
+        document.getElementById('rCount').textContent=filteredMovies.length+' films';
+        appendMovieCards(newMovies);
+        infRendered+=newMovies.length;
+      } else {
+        markInfiniteExhausted();
+      }
+    } catch(_){
+      markInfiniteExhausted();
+    }
+  } else {
+    markInfiniteExhausted();
+  }
+
+  s.className=infExhausted?'done':'';
+  infLoading=false;
+}
+
+function appendMovieCards(movies){
+  const g=document.getElementById('allGrid');
+  const frag=document.createDocumentFragment();
+  const tmp=document.createElement('div');
+  tmp.innerHTML=movies.map(movieCard).join('');
+  const cards=tmp.querySelectorAll('.movie-card');
+  const startIdx=g.querySelectorAll('.movie-card').length;
+  cards.forEach((c,i)=>{
+    c.style.animationDelay=`${Math.min(i*40,400)}ms`;
+    frag.appendChild(c);
+  });
+  g.appendChild(frag);
+  // Observe new lazy images
+  observeLazyImgs(g);
+}
+
+function markInfiniteExhausted(){
+  infExhausted=true;
+  document.getElementById('infiniteSentinel').className='done';
+}
+function resetInfinite(){
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* CHANGE: IntersectionObserver for infinite scroll sentinel */
+function setupInfiniteScroll(){
+  const sentinel=document.getElementById('infiniteSentinel');
+  const scrollObs=new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting && curView==='movies'){
+      loadMoreMovies();
+    }
+  },{rootMargin:'400px 0px'});
+  scrollObs.observe(sentinel);
+}
+
+/* ═══════════════════════════════════════════
+   CATEGORIES
+═══════════════════════════════════════════ */
+const CATS=[
+  {n:'Action',e:'⚔️',bg:'linear-gradient(135deg,#1a0505,#3a0a0a)'},
+  {n:'Drama', e:'🎭',bg:'linear-gradient(135deg,#050510,#0a1530)'},
+  {n:'Thriller',e:'🔪',bg:'linear-gradient(135deg,#080808,#151525)'},
+  {n:'Sci-Fi',e:'🚀',bg:'linear-gradient(135deg,#001015,#002030)'},
+  {n:'Comedy',e:'😂',bg:'linear-gradient(135deg,#151000,#302800)'},
+  {n:'Horror',e:'👻',bg:'linear-gradient(135deg,#100010,#1a001a)'},
+];
+function buildCats(){
+  document.getElementById('catGrid').innerHTML=CATS.map(c=>`
+    <div class="cat-card" onclick="filterByCat('${c.n}')">
+      <div class="cat-bg" style="background:${c.bg}">${c.e}</div>
+      <div class="cat-ov"><span class="cat-label">${c.n}</span></div>
+    </div>`).join('');
+}
+function filterByCat(g){showView('movies');setAct('movies');document.getElementById('gFilter').value=g;filterMovies();}
+
+/* ═══════════════════════════════════════════
+   DETAIL PAGE
+   CHANGE: Skeleton for poster + cast + gallery
+═══════════════════════════════════════════ */
+function openById(id){const m=allMovies.find(m=>String(m.id)===String(id));if(m)showDetail(m);}
+
+async function showDetail(m){
+  if(!m)return;
+  curMovie=m; prevView=curView;
+  showView('detail'); window.scrollTo(0,0);
+
+  // CHANGE: Show skeleton for poster while img loads
+  const pw=document.getElementById('detPosterWrap');
+  pw.innerHTML=`<div class="sk-det-poster"><div class="sk-rect"></div></div>`;
+
+  // Background
+  document.getElementById('detBg').style.backgroundImage=`url('${bgUrl(m)}')`;
+
+  // Fill meta immediately
+  document.getElementById('detTitle').textContent=m.title;
+  document.getElementById('detDesc').textContent=m.overview||'No description available.';
+  document.getElementById('detGenres').innerHTML=m.genres.map(g=>`<span class="gtag">${g}</span>`).join('');
+  document.getElementById('trailThumb').src=bgUrl(m);
+  document.getElementById('detMeta').innerHTML=
+    `<span class="det-mi"><i class="fas fa-calendar"></i> ${m.year}</span>
+     ${m.runtime?`<span class="det-mi"><i class="fas fa-clock"></i> ${m.runtime}</span>`:''}
+     ${m.original_language?`<span class="det-mi"><i class="fas fa-globe"></i> ${m.original_language.toUpperCase()}</span>`:''}
+     <span class="det-mi"><i class="fas fa-poll"></i> ${(m.vote_count||0).toLocaleString()} votes</span>`;
+  document.getElementById('detRate').innerHTML=
+    `<span class="rate-num">${m.rating}</span>
+     <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px">Score</div>
+     <div>${stars(m.rating/2)}</div></div>`;
+  trailerKey='';
+  document.getElementById('detPlayBtn').onclick=()=>trailerKey?openModal():showToast('Fetching trailer...');
+  document.getElementById('detFavBtn').innerHTML=favs.has(m.id)
+    ?'<i class="fas fa-heart" style="color:var(--crimson-bright)"></i> In My List'
+    :'<i class="far fa-heart"></i> Add to List';
+
+  // CHANGE: Skeleton on cast + gallery
+  document.getElementById('castGrid').innerHTML=skeletons(6,'cast');
+  document.getElementById('galGrid').innerHTML=skeletons(8,'grid');
+
+  buildRevs(m.id); resetRvForm();
+
+  // Load poster with fade
+  const img=document.createElement('img');
+  img.id='detPoster'; img.alt=m.title;
+  img.style.width='100%'; img.style.display='block';
+  img.onload=()=>{
+    img.classList.add('loaded');
+    pw.innerHTML=''; pw.appendChild(img);
+    pw.classList.add('fade-in');
+  };
+  img.onerror=()=>{ img.src=`https://picsum.photos/seed/${m.id}fp/300/450`; img.classList.add('loaded'); };
+  img.src=posterUrl(m);
+
+  // Enrich from API
+  if(apiMode==='tmdb'){
+    const[creds,vids,imgs]=await Promise.allSettled([
+      tmdbFetch(`/movie/${m.id}/credits`),
+      tmdbFetch(`/movie/${m.id}/videos`),
+      tmdbFetch(`/movie/${m.id}/images`)
+    ]);
+    buildCast(creds.status==='fulfilled'?(creds.value.cast||[]):[]);
+    if(vids.status==='fulfilled'){
+      const v=(vids.value.results||[]).find(v=>v.type==='Trailer'&&v.site==='YouTube')
+             ||(vids.value.results||[]).find(v=>v.site==='YouTube');
+      trailerKey=v?.key||'';
+      document.getElementById('detPlayBtn').onclick=()=>trailerKey?openModal():showToast('No trailer available');
+    }
+    buildGallery(imgs.status==='fulfilled'?(imgs.value.backdrops||[]):[],m);
+  } else if(apiMode==='omdb'){
+    try{
+      const d=await omdbFetch({t:m.title,y:m.year,type:'movie',plot:'full'});
+      if(d.Response!=='False'){
+        document.getElementById('detDesc').textContent=d.Plot||m.overview||'';
+        if(d.Actors&&d.Actors!=='N/A')
+          buildCast(d.Actors.split(',').map((a,i)=>({name:a.trim(),character:'',id:i})));
+        else buildCast([]);
+      } else buildCast([]);
+    } catch{ buildCast([]); }
+    buildGallery([],m);
+  } else { buildCast([]); buildGallery([],m); }
+}
+
+/* ═══════════════════════════════════════════
+   CAST / GALLERY
+   CHANGE: lazy images via IntersectionObserver
+═══════════════════════════════════════════ */
+function buildCast(cast){
+  const g=document.getElementById('castGrid');
+  if(!cast.length){
+    g.innerHTML='<p style="color:var(--text-muted);font-size:13px">Cast information unavailable.</p>';
+    return;
+  }
+  g.innerHTML=cast.slice(0,8).map(c=>{
+    const ph=c.profile_path?IMG(c.profile_path,'w200'):`https://ui-avatars.com/api/?name=${encodeURIComponent(c.name||'Actor')}&size=200&background=1a1a26&color=c9a84c&bold=true`;
+    const fb=`https://ui-avatars.com/api/?name=${encodeURIComponent(c.name||'Actor')}&size=200&background=1a1a26&color=c9a84c&bold=true`;
+    return `<div class="cast-card fade-in">
+      <img class="cast-photo" data-src="${ph}" data-fallback="${fb}" alt="${esc(c.name)}" onload="this.classList.add('loaded')">
+      <div class="cast-info">
+        <div class="cast-name">${esc(c.name)}</div>
+        <div class="cast-char">${esc((c.character||c.job||'').slice(0,22))}</div>
+      </div>
+    </div>`;
+  }).join('');
+  observeLazyImgs(g);
+}
+
+function buildGallery(bds,m){
+  const g=document.getElementById('galGrid');
+  const items=bds.length?bds.slice(0,8):Array(8).fill(null).map((_,i)=>({_idx:i}));
+  g.innerHTML=items.map((b,i)=>{
+    const src=b.file_path?IMG(b.file_path,'w780'):`https://picsum.photos/seed/${m.id}gl${i}/780/440`;
+    const fb=`https://picsum.photos/seed/gal${m.id}${i}/780/440`;
+    return `<div class="gal-item fade-in" style="animation-delay:${i*50}ms">
+      <img data-src="${src}" data-fallback="${fb}" alt="Still ${i+1}" loading="lazy" onload="this.classList.add('loaded')">
+    </div>`;
+  }).join('');
+  observeLazyImgs(g);
+}
+
+/* ═══════════════════════════════════════════
+   SEARCH & FILTER
+═══════════════════════════════════════════ */
+let fTimer;
+function filterMovies(){clearTimeout(fTimer);fTimer=setTimeout(doFilter,140);}
+function doFilter(){
+  const q=(document.getElementById('mSearch').value||'').toLowerCase().trim();
+  const g=document.getElementById('gFilter').value;
+  const y=document.getElementById('yFilter').value;
+  const r=parseFloat(document.getElementById('rFilter').value)||0;
+  filteredMovies=allMovies.filter(m=>{
+    if(q&&!m.title.toLowerCase().includes(q)&&!(m.genres||[]).some(x=>x.toLowerCase().includes(q)))return false;
+    if(g&&!(m.genres||[]).includes(g))return false;
+    if(r&&m.rating<r)return false;
+    if(y==='old'&&parseInt(m.year)>=2018)return false;
+    if(y&&y!=='old'&&m.year!==y)return false;
+    return true;
+  });
+  buildAllMovies(true); // CHANGE: always reset infinite on filter change
+}
+function handleNavSearch(v){
+  if(v.length>1){
+    if(curView!=='movies'){showView('movies');setAct('movies');}
+    document.getElementById('mSearch').value=v;filterMovies();
+  }
+}
+function sortMovies(by){
+  const arr=[...filteredMovies];
+  if(by==='rating')arr.sort((a,b)=>b.rating-a.rating);
+  else if(by==='year')arr.sort((a,b)=>(b.year|0)-(a.year|0));
+  else arr.sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+  filteredMovies=arr; buildAllMovies(true);
+}
+function setFBtn(btn){document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+/* ═══════════════════════════════════════════
+   REVIEWS
+═══════════════════════════════════════════ */
+const SEED_RVS=[
+  {name:'CinemaPhile88',rating:5,text:'An absolute masterpiece. The cinematography alone is worth the price of admission.',likes:42,date:'2 days ago'},
+  {name:'FilmNerd42',rating:4,text:'Brilliant performances all around. The narrative is compelling even if the third act drags slightly.',likes:28,date:'5 days ago'},
+  {name:'MovieBuff_Sara',rating:5,text:'One of the finest films of the year. Emotionally resonant from start to finish.',likes:71,date:'1 week ago'},
+];
+
+function saveRVs(){ 
+  try{ 
+    localStorage.setItem('cine_reviews', JSON.stringify(userRevs)); 
+  } catch(e){ 
+    console.warn('Failed to save reviews:',e); 
+  } 
+}
+
+function loadRVs(){
+  try {
+    const saved = localStorage.getItem('cine_reviews');
+    if(saved) {
+      userRevs = JSON.parse(saved);
+    }
+  } catch(e){ 
+    console.warn('Failed to load reviews:',e); 
+  }
+}
+
+function buildRevs(id){
+  if(!userRevs[id]) userRevs[id]=SEED_RVS.map(r=>({...r}));
+  renderRevs(id);
+}
+function renderRevs(id){
+  document.getElementById('rvList').innerHTML=userRevs[id].map((r,i)=>`
+    <div class="rv-card fade-in" style="animation-delay:${i*60}ms">
+      <div class="rv-hdr">
+        <div class="rv-ava">${r.name[0]}</div>
+        <div><div class="rv-name">${esc(r.name)}</div><div class="rv-date">${r.date}</div></div>
+        <div style="margin-left:auto">
+          ${'<i class="fas fa-star" style="color:var(--gold);font-size:12px"></i>'.repeat(r.rating)}
+          ${'<i class="far fa-star" style="color:var(--text-muted);font-size:12px"></i>'.repeat(5-r.rating)}
+        </div>
+      </div>
+      <p class="rv-txt">${esc(r.text)}</p>
+      <div class="rv-acts">
+        <button class="rv-btn${r.liked?' on':''}" onclick="likeRv(${i})">
+          <i class="${r.liked?'fas':'far'} fa-heart"></i> ${r.likes}
+        </button>
+        <button class="rv-btn" onclick="showToast('Reply coming soon!')">
+          <i class="far fa-comment"></i> Reply
+        </button>
+      </div>
+    </div>`).join('');
+}
+function likeRv(i){
+  const r=userRevs[curMovie.id][i];
+  r.liked=!r.liked; r.likes+=r.liked?1:-1;
+  renderRevs(curMovie.id);
+  saveRVs();
+}
+function setStar(v){starVal=v;document.querySelectorAll('.sp').forEach((s,i)=>s.classList.toggle('on',i<v));}
+function resetRvForm(){starVal=0;document.getElementById('rvText').value='';document.querySelectorAll('.sp').forEach(s=>s.classList.remove('on'));}
+const RNAMES=['CineWatcher','FilmLover','MovieFan','ScreenBuff','CineCritic','ReelViewer','CinephileX'];
+function submitReview(){
+  const t=document.getElementById('rvText').value.trim();
+  if(!t){showToast('Please write something!');return;}
+  if(!starVal){showToast('Please select a rating!');return;}
+  const id=curMovie.id;
+  if(!userRevs[id]) userRevs[id]=[];
+  userRevs[id].unshift({name:RNAMES[Math.random()*RNAMES.length|0],rating:starVal,text:t,likes:0,date:'Just now'});
+  renderRevs(id); resetRvForm();
+  saveRVs();
+  showToast('Review posted!');
+}
+function toggleFav(){
+  if(!curMovie)return;
+  const id=curMovie.id;
+  favs[favs.has(id)?'delete':'add'](id);
+  saveFavs();
+  updateWatchlistCount();
+  document.getElementById('detFavBtn').innerHTML=favs.has(id)
+    ?'<i class="fas fa-heart" style="color:var(--crimson-bright)"></i> In My List'
+    :'<i class="far fa-heart"></i> Add to List';
+  showToast(favs.has(id)?'Added to My List!':'Removed from My List');
+}
+
+/* ═══════════════════════════════════════════
+   USER AUTHENTICATION FUNCTIONS
+═══════════════════════════════════════════ */
+let userMenuOpen=false;
+let currentUser=null;
+
+function loadUser() {
+  try {
+    const saved=localStorage.getItem('cine_user');
+    if(saved) {
+      currentUser=JSON.parse(saved);
+      updateUserUI();
+    }
+  } catch(e){ console.warn('Failed to load user:',e); }
+}
+
+function updateUserUI() {
+  const btn=document.getElementById('userBtn');
+  if(currentUser && currentUser.loggedIn) {
+    btn.innerHTML=`<div style="width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--crimson));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">${(currentUser.name||currentUser.email||'U')[0].toUpperCase()}</div>`;
+  } else {
+    btn.innerHTML='<i class="fas fa-user"></i>';
+  }
+}
+
+function toggleUserMenu() {
+  userMenuOpen=!userMenuOpen;
+  const menu=document.getElementById('userMenu');
+  const btn=document.getElementById('userBtn');
+  if(userMenuOpen) {
+    menu.style.display='flex';
+    btn.style.borderColor='var(--gold)';
+    btn.style.color='var(--gold)';
+    renderUserMenu();
+  } else {
+    menu.style.display='none';
+    btn.style.borderColor='var(--border)';
+    btn.style.color='var(--text-secondary)';
+  }
+}
+
+function renderUserMenu() {
+  const content=document.getElementById('userMenuContent');
+  
+  if(currentUser && currentUser.loggedIn) {
+    content.innerHTML=`
+      <div style="padding:16px;border-bottom:1px solid var(--border)">
+        <div style="font-weight:600;font-size:14px;margin-bottom:4px">${esc(currentUser.name||'User')}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${esc(currentUser.email||'')}</div>
+      </div>
+      <div style="padding:8px">
+        <button onclick="showToast('Profile coming soon!')" style="width:100%;background:none;border:none;padding:10px 12px;text-align:left;color:var(--text-secondary);cursor:pointer;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:13px;transition:all .2s" onmouseover="this.style.background='rgba(201,168,76,.1)';this.style.color='var(--gold)'" onmouseout="this.style.background='none';this.style.color='var(--text-secondary)'">
+          <i class="fas fa-user" style="margin-right:10px;width:16px"></i>My Profile
+        </button>
+        <button onclick="showToast('Settings coming soon!')" style="width:100%;background:none;border:none;padding:10px 12px;text-align:left;color:var(--text-secondary);cursor:pointer;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:13px;transition:all .2s" onmouseover="this.style.background='rgba(201,168,76,.1)';this.style.color='var(--gold)'" onmouseout="this.style.background='none';this.style.color='var(--text-secondary)'">
+          <i class="fas fa-cog" style="margin-right:10px;width:16px"></i>Settings
+        </button>
+      </div>
+      <div style="padding:8px;border-top:1px solid var(--border)">
+        <button onclick="handleLogout()" style="width:100%;background:none;border:none;padding:10px 12px;text-align:left;color:var(--crimson);cursor:pointer;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:13px;transition:all .2s" onmouseover="this.style.background='rgba(168,36,60,.1)'" onmouseout="this.style.background='none'">
+          <i class="fas fa-sign-out-alt" style="margin-right:10px;width:16px"></i>Sign Out
+        </button>
+      </div>
+    `;
+  } else {
+    content.innerHTML=`
+      <div style="padding:16px;text-align:center">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">Sign in to save your watchlist and reviews</div>
+        <a href="signin.html" style="display:block;background:var(--gold);color:#070709;text-decoration:none;padding:10px 20px;border-radius:4px;font-weight:600;font-size:13px;margin-bottom:8px;transition:all .3s" onmouseover="this.style.background='var(--gold-light)'" onmouseout="this.style.background='var(--gold)'">
+          <i class="fas fa-sign-in-alt" style="margin-right:6px"></i>Sign In
+        </a>
+        <a href="login.html" style="display:block;background:rgba(255,255,255,.08);color:var(--text-prime);text-decoration:none;padding:10px 20px;border-radius:4px;font-weight:500;font-size:13px;border:1px solid var(--border);transition:all .3s" onmouseover="this.style.background='rgba(255,255,255,.14)';this.style.borderColor='var(--gold)'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.borderColor='var(--border)'">
+          <i class="fas fa-user-plus" style="margin-right:6px"></i>Create Account
+        </a>
+      </div>
+    `;
+  }
+}
+
+function handleLogout() {
+  if(confirm('Are you sure you want to sign out?')) {
+    localStorage.removeItem('cine_user');
+    currentUser=null;
+    updateUserUI();
+    toggleUserMenu();
+    showToast('Signed out successfully');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   WATCHLIST FUNCTIONS
+═══════════════════════════════════════════ */
+function toggleWatchlist() {
+  watchlistOpen=!watchlistOpen;
+  const panel=document.getElementById('watchlistPanel');
+  const btn=document.getElementById('watchlistBtn');
+  if(watchlistOpen) {
+    panel.style.display='flex';
+    btn.style.borderColor='var(--gold)';
+    btn.style.color='var(--gold)';
+    renderWatchlist();
+  } else {
+    panel.style.display='none';
+    btn.style.borderColor='var(--border)';
+    btn.style.color='var(--text-secondary)';
+  }
+}
+
+function renderWatchlist() {
+  const content=document.getElementById('watchlistContent');
+  const count=document.getElementById('watchlistCount');
+  
+  if(favs.size===0) {
+    content.innerHTML=`
+      <div class="wl-empty">
+        <i class="far fa-heart"></i>
+        <div style="font-size:13px;margin-bottom:4px">Your watchlist is empty</div>
+        <div style="font-size:11px">Add movies by clicking the heart icon</div>
+      </div>`;
+    count.style.display='none';
+    return;
+  }
+  
+  count.style.display='flex';
+  count.textContent=favs.size;
+  
+  const movies=allMovies.filter(m=>favs.has(m.id));
+  content.innerHTML=movies.map(m=>{
+    const movieId = String(m.id);
+    return `
+    <div class="wl-item" data-movie-id="${movieId}">
+      <div class="wl-poster">
+        <img src="${posterUrl(m)}" alt="${esc(m.title)}">
+      </div>
+      <div class="wl-info">
+        <div class="wl-title">${esc(m.title)}</div>
+        <div class="wl-meta">${m.year} · ${m.genres[0]||'Movie'}</div>
+        <div class="wl-rating">
+          <i class="fas fa-star" style="font-size:10px"></i>
+          ${m.rating}/10
+        </div>
+        <button class="wl-remove" data-movie-id="${movieId}">
+          <i class="fas fa-times" style="margin-right:4px"></i>Remove
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  
+  // Add event listeners after rendering
+  content.querySelectorAll('.wl-item').forEach(item => {
+    const movieId = item.getAttribute('data-movie-id');
+    item.addEventListener('click', (e) => {
+      if(!e.target.closest('.wl-remove')) {
+        openById(movieId);
+        toggleWatchlist();
+      }
+    });
+  });
+  
+  content.querySelectorAll('.wl-remove').forEach(btn => {
+    const movieId = btn.getAttribute('data-movie-id');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      // Find the actual movie to get its real ID
+      const movie = allMovies.find(m => String(m.id) === movieId);
+      if(movie) {
+        removeFromWatchlist(movie.id);
+      }
+    });
+  });
+}
+
+function removeFromWatchlist(id) {
+  // Remove from favs Set
+  favs.delete(id);
+  
+  saveFavs();
+  renderWatchlist();
+  
+  if(curMovie && curMovie.id == id) {
+    document.getElementById('detFavBtn').innerHTML='<i class="far fa-heart"></i> Add to List';
+  }
+  showToast('Removed from watchlist');
+}
+
+function clearWatchlist() {
+  if(favs.size===0) return;
+  if(confirm(`Remove all ${favs.size} movies from your watchlist?`)) {
+    favs.clear();
+    saveFavs();
+    renderWatchlist();
+    if(curMovie) {
+      document.getElementById('detFavBtn').innerHTML='<i class="far fa-heart"></i> Add to List';
+    }
+    showToast('Watchlist cleared');
+  }
+}
+
+function saveFavs() {
+  try {
+    localStorage.setItem('cine_watchlist', JSON.stringify([...favs]));
+  } catch(e){ console.warn('Failed to save watchlist:',e); }
+}
+
+function loadFavs() {
+  try {
+    const saved=localStorage.getItem('cine_watchlist');
+    if(saved) {
+      favs=new Set(JSON.parse(saved));
+      updateWatchlistCount();
+    }
+  } catch(e){ console.warn('Failed to load watchlist:',e); }
+}
+
+function updateWatchlistCount() {
+  const count=document.getElementById('watchlistCount');
+  if(favs.size>0) {
+    count.style.display='flex';
+    count.textContent=favs.size;
+  } else {
+    count.style.display='none';
+  }
+}
+
+document.addEventListener('click', (e)=>{
+  const panel=document.getElementById('watchlistPanel');
+  const btn=document.getElementById('watchlistBtn');
+  if(watchlistOpen && panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+    toggleWatchlist();
+  }
+  
+  const userMenu=document.getElementById('userMenu');
+  const userBtn=document.getElementById('userBtn');
+  if(userMenuOpen && userMenu && userBtn && !userMenu.contains(e.target) && !userBtn.contains(e.target)) {
+    toggleUserMenu();
+  }
+});
+
+/* ═══════════════════════════════════════════
+   COMMUNITY
+═══════════════════════════════════════════ */
+const SEED_DISC=[
+  {user:'FilmDirector99',init:'F',grad:'#c9a84c,#7a6530',title:'Best cinematography of 2024?',body:'The visual storytelling in recent releases has been extraordinary. Dune 2 vs Oppenheimer — who wins?',likes:156,comments:43,views:890,time:'2h ago'},
+  {user:'NightOwlCinema',init:'N',grad:'#1a8a8a,#0d4545',title:'Practical effects vs CGI in 2025',body:'With AI advancing rapidly, where does filmmaking head next decade? Are practical effects dying?',likes:89,comments:67,views:1240,time:'4h ago'},
+  {user:'CritiqueMaster',init:'C',grad:'#a8243c,#5a1020',title:'Underrated films that deserve more recognition',body:'"The Lighthouse" (2019) deserved way more mainstream attention. What are your picks?',likes:234,comments:128,views:2100,time:'1d ago'},
+  {user:'ScreenScribe',init:'S',grad:'#4a3a8a,#2a2050',title:'Dialogue or visuals — what makes a great film?',body:'Kubrick vs Tarantino as the ultimate debate. Which dimension matters more?',likes:77,comments:55,views:670,time:'2d ago'},
+];
+
+function saveDiscs(){ 
+  try{ 
+    localStorage.setItem('cine_discussions', JSON.stringify(discs)); 
+  } catch(e){ 
+    console.warn('Failed to save discussions:',e); 
+  } 
+}
+
+function loadDiscs(){
+  try {
+    const saved = localStorage.getItem('cine_discussions');
+    if(saved) {
+      discs = JSON.parse(saved);
+    }
+  } catch(e){ 
+    console.warn('Failed to load discussions:',e); 
+  }
+}
+
+function buildComm(){
+  if(!discs.length) discs=SEED_DISC.map(d=>({...d}));
+  renderDiscs();
+  document.getElementById('topRevs').innerHTML=[
+    {n:'CinephileX',c:142},{n:'FilmBuff_Anna',c:98},{n:'ReelMaster',c:87},{n:'ScreenJudge',c:71},{n:'CritiqueKing',c:63}
+  ].map((r,i)=>`<div class="top-rev">
+    <span class="top-rev-rank">#${i+1}</span>
+    <div class="top-rev-ava">${r.n[0]}</div>
+    <div><div style="font-size:13px;font-weight:600">${r.n}</div><div style="font-size:11px;color:var(--text-muted)">${r.c} reviews</div></div>
+  </div>`).join('');
+  document.getElementById('trendTopics').innerHTML=
+    ['#BestOf2024','#DirectorDebate','#ClassicsRewatch','#HiddenGems','#FilmScore','#SequelNews']
+    .map(t=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;color:var(--gold-dim);font-size:14px;transition:color .2s"
+      onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--gold-dim)'"
+      onclick="showToast('Browsing ${t}')">${t}</div>`).join('');
+}
+function renderDiscs(){
+  document.getElementById('discList').innerHTML=discs.map((d,i)=>`
+    <div class="disc-card fade-in" style="animation-delay:${i*60}ms">
+      <div class="disc-hdr">
+        <div class="disc-ava" style="background:linear-gradient(135deg,${d.grad})">${d.init}</div>
+        <div><div class="disc-user">${esc(d.user)}</div><div class="disc-time">${d.time}</div></div>
+      </div>
+      <div class="disc-title">${esc(d.title)}</div>
+      <div class="disc-pre">${esc(d.body)}</div>
+      <div class="disc-foot">
+        <span class="disc-stat"><i class="fas fa-heart"></i> ${d.likes}</span>
+        <span class="disc-stat"><i class="fas fa-comment"></i> ${d.comments}</span>
+        <span class="disc-stat"><i class="fas fa-eye"></i> ${d.views}</span>
+      </div>
+    </div>`).join('');
+}
+function postDisc(){
+  const t=document.getElementById('discTitle').value.trim();
+  const b=document.getElementById('discBody').value.trim();
+  if(!t||!b){showToast('Please fill in all fields!');return;}
+  discs.unshift({user:'You',init:'Y',grad:'var(--gold),var(--gold-dim)',title:t,body:b,likes:0,comments:0,views:1,time:'Just now'});
+  renderDiscs();
+  saveDiscs();
+  document.getElementById('discTitle').value='';
+  document.getElementById('discBody').value='';
+  showToast('Discussion posted!');
+}
+
+/* ═══════════════════════════════════════════
+  MODAL — CHANGE: CSS handles open/scale transition
+═══════════════════════════════════════════ */
+function openModal(){
+  if(!trailerKey){showToast('No trailer available');return;}
+  document.getElementById('modalFrame').src=`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`;
+  const m=document.getElementById('modal');
+  m.style.display='flex';
+  requestAnimationFrame(()=>m.classList.add('open'));
+}
+function closeModal(){
+  const m=document.getElementById('modal');
+  m.classList.remove('open');
+  setTimeout(()=>{ m.style.display='none'; document.getElementById('modalFrame').src=''; },300);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+/* ═══════════════════════════════════════════
+  NAVIGATION
+═══════════════════════════════════════════ */
+function showView(name){
+  ['home','movies','detail','community'].forEach(v=>{
+    document.getElementById(v+'-view').classList.toggle('active',v===name);
+  });
+  prevView=curView; curView=name; window.scrollTo(0,0);
+  try { localStorage.setItem('cine_current_view', name); } catch(_){}
+  // CHANGE: Re-setup swipes when switching views
+  if(name==='home') setTimeout(attachAllSwipes,200);
+}
+function goBack(){showView(prevView==='detail'?'home':prevView||'home');}
+function setAct(name){
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  const map={home:'nl-home',movies:'nl-movies',community:'nl-comm'};
+  if(map[name])document.getElementById(map[name]).classList.add('active');
+}
+function scrollCar(id,dir){
+  document.getElementById(id+'Car').scrollBy({left:dir*600,behavior:'smooth'});
+}
+
+/* TOAST */
+let tt;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  t.classList.add('show'); clearTimeout(tt);
+  tt=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+/* STARS */
+function stars(v){
+  let h='';
+  for(let i=1;i<=5;i++){
+    if(v>=i)      h+='<i class="fas fa-star"           style="color:var(--gold);font-size:12px"></i>';
+    else if(v>=i-.5)h+='<i class="fas fa-star-half-alt" style="color:var(--gold);font-size:12px"></i>';
+    else          h+='<i class="far fa-star"            style="color:var(--text-muted);font-size:12px"></i>';
+  }
+  return h;
+}
+
+/* ═══════════════════════════════════════════
+  EMBEDDED FALLBACK DATA — 24 films
+═══════════════════════════════════════════ */
+const EMBEDDED=[
+  {id:1001,title:'Dune: Part Two',overview:'Paul Atreides unites with the Fremen while seeking revenge against the conspirators who destroyed his family.',rating:8.5,year:'2024',genres:['Sci-Fi','Adventure','Drama'],poster_override:'https://m.media-amazon.com/images/M/MV5BN2QyZGU4ZDctOWMzMy00NTc5LThlOGQtODhmNDI1NjgwZjc2XkEyXkFqcGdeQXVyMDM2NDM2MQ@@._V1_SX300.jpg',popularity:9800,vote_count:245000,original_language:'en'},
+  {id:1002,title:'Oppenheimer',overview:'The story of J. Robert Oppenheimer and his role in the development of the atomic bomb during World War II.',rating:8.9,year:'2023',genres:['Drama','Thriller','History'],poster_override:'https://m.media-amazon.com/images/M/MV5BMDBmYTZjNjUtN2M1MS00MTQ2LTk2ODgtNzc2M2QyZGE5NTVjXkEyXkFqcGdeQXVyNzAwMjU2MTY@._V1_SX300.jpg',popularity:9500,vote_count:620000,original_language:'en'},
+  {id:1003,title:'Poor Things',overview:'The incredible tale about the evolution of Bella Baxter, a young woman brought back to life by eccentric scientist Dr. Godwin Baxter.',rating:8.0,year:'2023',genres:['Fantasy','Drama','Comedy'],poster_override:'https://m.media-amazon.com/images/M/MV5BNGIyYWMzNjktNDE3Nl5BNDNiQkJiM2YtYWRkOGJhNzYzZjctXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_SX300.jpg',popularity:7200,vote_count:180000,original_language:'en'},
+  {id:1004,title:'Killers of the Flower Moon',overview:'Members of the Osage Nation are murdered in 1920s Oklahoma, sparking a landmark federal investigation.',rating:8.1,year:'2023',genres:['Crime','Drama','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BMjMyOTM4MDMxNV5BMl5BanBnXkFtZTcwNjcyNTM3OQ@@._V1_SX300.jpg',popularity:7800,vote_count:200000,original_language:'en'},
+  {id:1005,title:'The Batman',overview:'Batman ventures into Gotham when a sadistic killer leaves cryptic clues and targets city elites.',rating:7.8,year:'2022',genres:['Action','Crime','Drama'],poster_override:'https://m.media-amazon.com/images/M/MV5BMDdmMTBiNTYtMDIzNi00NGVlLWIzMGEtZTVjOTE3MDY3YWNkXkEyXkFqcGdeQXVyMzMwOTU5MDk@._V1_SX300.jpg',popularity:8500,vote_count:460000,original_language:'en'},
+  {id:1006,title:'Everything Everywhere All at Once',overview:'A Chinese-American woman gets swept up in an adventure to save the multiverse by connecting with parallel lives.',rating:8.7,year:'2022',genres:['Action','Fantasy','Comedy'],poster_override:'https://m.media-amazon.com/images/M/MV5BYTdiOTIyZTQtNmQ1OS00NjZlLWIyMTgtYzk5Y2M3ZDVmMDk1XkEyXkFqcGdeQXVyMTAzMDg4NzU0._V1_SX300.jpg',popularity:8800,vote_count:520000,original_language:'en'},
+  {id:1007,title:'Interstellar',overview:'A team of explorers travel through a wormhole in space in an attempt to ensure humanity\'s survival.',rating:8.7,year:'2014',genres:['Sci-Fi','Drama','Adventure'],poster_override:'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_SX300.jpg',popularity:9100,vote_count:2000000,original_language:'en'},
+  {id:1008,title:'Inception',overview:'A thief who steals corporate secrets through dream-sharing technology is tasked with planting an idea into a CEO\'s mind.',rating:8.8,year:'2010',genres:['Action','Sci-Fi','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg',popularity:9300,vote_count:2500000,original_language:'en'},
+  {id:1009,title:'The Godfather',overview:'The aging patriarch of an organized crime dynasty transfers control of his empire to his reluctant youngest son.',rating:9.2,year:'1972',genres:['Crime','Drama'],poster_override:'https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg',popularity:8900,vote_count:2000000,original_language:'en'},
+  {id:1010,title:'The Dark Knight',overview:'Batman raises the stakes in his war on crime, facing a criminal mastermind known as the Joker who causes chaos in Gotham.',rating:9.0,year:'2008',genres:['Action','Crime','Drama'],poster_override:'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_SX300.jpg',popularity:9400,vote_count:2800000,original_language:'en'},
+  {id:1011,title:'Parasite',overview:'Greed and class discrimination threaten a newly formed symbiosis between the wealthy Park family and the destitute Kim clan.',rating:8.6,year:'2019',genres:['Drama','Thriller','Comedy'],poster_override:'https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg',popularity:8700,vote_count:1200000,original_language:'ko'},
+  {id:1012,title:'Joker',overview:'In Gotham City, a mentally troubled comedian embarks on a downward spiral of revolution and bloody crime.',rating:8.4,year:'2019',genres:['Crime','Drama','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDCtN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_SX300.jpg',popularity:9000,vote_count:1500000,original_language:'en'},
+  {id:1013,title:'Avengers: Endgame',overview:'The remaining Avengers assemble to undo Thanos\'s actions and restore balance to the universe.',rating:8.4,year:'2019',genres:['Action','Adventure','Fantasy'],poster_override:'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg',popularity:9200,vote_count:1100000,original_language:'en'},
+  {id:1014,title:'Get Out',overview:'A young Black man visits his white girlfriend\'s family estate and discovers a deeply disturbing secret.',rating:7.7,year:'2017',genres:['Horror','Thriller','Drama'],poster_override:'https://m.media-amazon.com/images/M/MV5BMjUxMDQwNjcyMl5BMl5BanBnXkFtZTgwNzcwMzc1MTI@._V1_SX300.jpg',popularity:7800,vote_count:700000,original_language:'en'},
+  {id:1015,title:'Mad Max: Fury Road',overview:'In a post-apocalyptic wasteland, Max and rebel warrior Furiosa flee a tyrannical warlord and his army.',rating:8.1,year:'2015',genres:['Action','Adventure','Sci-Fi'],poster_override:'https://m.media-amazon.com/images/M/MV5BN2EwM2I5OWMtMGQyMi00Zjg1LWJkNTctZTdjYTA4OGUwZjMyXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_SX300.jpg',popularity:8600,vote_count:900000,original_language:'en'},
+  {id:1016,title:'La La Land',overview:'While navigating their careers in Los Angeles, a pianist and an actress fall in love while reconciling their dreams.',rating:8.0,year:'2016',genres:['Drama','Romance','Comedy'],poster_override:'https://m.media-amazon.com/images/M/MV5BMzUzNDM2NzM2MV5BMl5BanBnXkFtZTgwNTM3NTg4OTE@._V1_SX300.jpg',popularity:8000,vote_count:800000,original_language:'en'},
+  {id:1017,title:'Whiplash',overview:'A promising young drummer enrolls at a music conservatory where an intensely driven instructor pushes him to his limits.',rating:8.5,year:'2014',genres:['Drama','Thriller','Music'],poster_override:'https://m.media-amazon.com/images/M/MV5BOTA5NDZlZGUtMjAxOS00YTRkLTkwYmMtYWQ0NWEwZDZiNjEzXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_SX300.jpg',popularity:8200,vote_count:900000,original_language:'en'},
+  {id:1018,title:'1917',overview:'Two British soldiers are sent to deliver a critical message deep in enemy territory during World War I.',rating:8.2,year:'2019',genres:['Drama','War','Action'],poster_override:'https://m.media-amazon.com/images/M/MV5BOTdmNTFjNDEtNzg0My00ZjkxLTg1ZDAtZTdkMDc2ZmFiNWQ1XkEyXkFqcGdeQXVyNTAzNzgwNTg@._V1_SX300.jpg',popularity:8100,vote_count:700000,original_language:'en'},
+  {id:1019,title:'The Shawshank Redemption',overview:'Two imprisoned men bond over years, finding solace and eventual redemption through acts of common decency.',rating:9.3,year:'1994',genres:['Drama','Crime'],poster_override:'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NiYyLTg3MzMtYTJmNjg3Nzk5MzMzXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_SX300.jpg',popularity:9000,vote_count:2800000,original_language:'en'},
+  {id:1020,title:'Pulp Fiction',overview:'The lives of two mob hitmen, a boxer, a gangster and his wife intertwine in four tales of violence and redemption.',rating:8.9,year:'1994',genres:['Crime','Drama','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg',popularity:8800,vote_count:2200000,original_language:'en'},
+  {id:1021,title:'Gladiator',overview:'A Roman general is betrayed and his family murdered by a corrupt prince, then seeks revenge as a gladiator.',rating:8.5,year:'2000',genres:['Action','Adventure','Drama'],poster_override:'https://m.media-amazon.com/images/M/MV5BMDliMmNhNDEtODUyOS00MjNlLTgxODEtN2U3NzIxMGVkZTA1XkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg',popularity:8400,vote_count:1500000,original_language:'en'},
+  {id:1022,title:'Arrival',overview:'A linguist is recruited by the military to communicate with alien lifeforms after mysterious spacecraft appear worldwide.',rating:8.0,year:'2016',genres:['Sci-Fi','Drama','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BMTExMzU0ODcxNDheQTJeQWpwZ15BbWU4MDE1OTI4MzAy._V1_SX300.jpg',popularity:8100,vote_count:800000,original_language:'en'},
+  {id:1023,title:'Hereditary',overview:'A grieving family is haunted by tragic and disturbing occurrences after the death of their secretive grandmother.',rating:7.3,year:'2018',genres:['Horror','Drama','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BOTU5MDg3OGItZWQ1Ny00ZGVmLTg2YTMtMDI4NjA4NjQ2YWNlXkEyXkFqcGdeQXVyMzY0MTE3NzU@._V1_SX300.jpg',popularity:7500,vote_count:500000,original_language:'en'},
+  {id:1024,title:'The Revenant',overview:'A frontiersman in the 1820s fights for survival after being left for dead by his hunting team.',rating:8.0,year:'2015',genres:['Adventure','Drama','Thriller'],poster_override:'https://m.media-amazon.com/images/M/MV5BMDE5OWViOWItYjYzZi00Y2Q4LWE2NzItZTk1ZWMwYzlhNTNiXkEyXkFqcGdeQXVyODE5NzE3OTE@._V1_SX300.jpg',popularity:7900,vote_count:900000,original_language:'en'},
+];
+
+/* ── Loader curtain ── */
+setTimeout(()=>{
+  const c=document.getElementById('loader-curtain');
+  if(c){ c.classList.add('hidden'); setTimeout(()=>c.style.display='none',1000); }
+},2000);
+
+/* BOOT */
+init();
+</script>
+</body>
+</html>
